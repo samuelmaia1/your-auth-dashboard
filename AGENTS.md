@@ -113,6 +113,33 @@ Backend existente:
 
 Se uma tarefa pedir backend ou autenticação real, primeiro leia a base atual, explique as opções compatíveis e implemente apenas o escopo solicitado. Não simule segurança real com mocks enganosos.
 
+## Contrato OpenAPI
+
+O frontend deve integrar com o backend usando o contrato OpenAPI versionado no projeto. O caminho esperado para esse contrato é `docs/api/openapi.json`, dentro da raiz do projeto frontend.
+
+Antes de implementar qualquer integração com backend, leia `docs/api/openapi.json` e use esse arquivo como fonte única da verdade para:
+
+- endpoints;
+- métodos HTTP;
+- path params;
+- query params;
+- headers;
+- request bodies;
+- response bodies;
+- status codes;
+- schemas/DTOs;
+- autenticação exigida por rota.
+
+Não invente endpoints, payloads, responses, status codes ou nomes de campos. Se o contrato estiver ausente, incompleto ou inconsistente, não implemente a integração; informe exatamente o que falta no contrato.
+
+Diferencie corretamente fluxos web com cookies HTTP-only, bearer token e API key de projeto conforme definido no OpenAPI. Para rotas com autenticação via cookie, use `credentials: "include"` ou equivalente. Para rotas com `projectApiKey`, envie a chave conforme o contrato, preferencialmente no header `X-API-Key`.
+
+Use variável de ambiente para a URL base da API, por exemplo `NEXT_PUBLIC_API_BASE_URL`. Centralize chamadas HTTP em uma camada de API/client/services/hooks, conforme o padrão existente no frontend. Não espalhe `fetch` ou `axios` diretamente em componentes visuais.
+
+Tipos TypeScript devem ser derivados do OpenAPI sempre que possível. Não edite `docs/api/openapi.json` manualmente no frontend. Se o contrato precisar mudar, solicite alteração no backend e regeneração do arquivo.
+
+Não crie mocks enganosos quando houver contrato real disponível.
+
 ## Comandos Úteis
 
 Os scripts disponíveis em `package.json` são:
