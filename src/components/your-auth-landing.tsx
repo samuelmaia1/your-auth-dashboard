@@ -91,7 +91,7 @@ export function YourAuthLanding() {
             Fale com a gente
           </a>
           <a
-            href="#comecar"
+            href="/cadastro"
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
             Começar agora
@@ -120,7 +120,7 @@ export function YourAuthLanding() {
             Documentação
           </a>
           <a
-            href="#comecar"
+            href="/cadastro"
             className="font-medium text-primary"
             onClick={() => setMenuOpen(false)}
           >
@@ -147,8 +147,7 @@ export function YourAuthLanding() {
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a
-              id="comecar"
-              href="#docs"
+              href="/cadastro"
               className="group inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5"
             >
               Começar gratuitamente{' '}
