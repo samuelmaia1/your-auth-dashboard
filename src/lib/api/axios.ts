@@ -5,7 +5,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-import { apiUrls, type BackendUrl } from '@/lib/api/urls'
+import { apiUrls, type BackendUrl } from '@lib/api/urls'
 
 type ApiRequestConfig<Data = unknown> = Omit<AxiosRequestConfig<Data>, 'data' | 'method' | 'url'>
 
