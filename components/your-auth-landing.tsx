@@ -110,10 +110,20 @@ export function YourAuthLanding() {
 
       {menuOpen && (
         <div className="mx-6 flex flex-col gap-4 border-t border-border py-5 text-sm md:hidden">
-          <a href="#recursos">Recursos</a>
-          <a href="#seguranca">Segurança</a>
-          <a href="#docs">Documentação</a>
-          <a href="#comecar" className="font-medium text-primary">
+          <a href="#recursos" onClick={() => setMenuOpen(false)}>
+            Recursos
+          </a>
+          <a href="#seguranca" onClick={() => setMenuOpen(false)}>
+            Segurança
+          </a>
+          <a href="#docs" onClick={() => setMenuOpen(false)}>
+            Documentação
+          </a>
+          <a
+            href="#comecar"
+            className="font-medium text-primary"
+            onClick={() => setMenuOpen(false)}
+          >
             Começar agora <ArrowRight className="ml-1 inline size-4" />
           </a>
         </div>
