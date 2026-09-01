@@ -199,6 +199,20 @@ export const FullWidthPrimaryButton = styled(PrimaryFormButton)({
   marginTop: 8,
 })
 
+export const SubmitLoadingIcon = styled('span')({
+  display: 'inline-flex',
+
+  '@keyframes account-signup-spin': {
+    to: {
+      transform: 'rotate(360deg)',
+    },
+  },
+
+  '& svg': {
+    animation: 'account-signup-spin 850ms linear infinite',
+  },
+})
+
 export const PasswordRules = styled('div')(({ theme }) => ({
   padding: 12,
   display: 'grid',
@@ -642,3 +656,34 @@ export const FormDescription = styled('p')(({ theme }) => ({
   fontSize: 14,
   lineHeight: 24 / 14,
 }))
+
+export const FormAlert = styled('p')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    marginTop: 20,
+    padding: '10px 12px',
+    border: `1px solid ${theme.alpha(palette.error.main, 0.22)}`,
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: theme.alpha(palette.error.main, 0.08),
+    color: palette.error.main,
+    fontSize: 13,
+    fontWeight: 500,
+    lineHeight: '20px',
+  }
+})
+
+export const SuccessModalMessage = styled('p')(({ theme }) => ({
+  color: (theme.vars || theme).palette.text.secondary,
+  fontSize: 14,
+  lineHeight: 24 / 14,
+}))
+
+export const SuccessModalActions = styled('div')({
+  marginTop: 24,
+  display: 'flex',
+})
+
+export const SuccessModalButton = styled(FormButton)({
+  width: '100%',
+})

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { CreateAccountRequest } from '@/types/account-types'
+
 export const createAccountPayloadSchema = z.object({
   name: z.string().trim().min(1, 'Informe seu nome.').max(255, 'Use no máximo 255 caracteres.'),
   lastName: z
@@ -56,7 +58,7 @@ export const accountSignupSchema = createAccountPayloadSchema
     path: ['confirmPassword'],
   })
 
-export type CreateAccountPayload = z.infer<typeof createAccountPayloadSchema>
+export type CreateAccountPayload = CreateAccountRequest
 export type AccountSignupFormValues = z.infer<typeof accountSignupSchema>
 
 export const accountSignupDefaultValues: AccountSignupFormValues = {

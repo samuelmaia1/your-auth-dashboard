@@ -1,3 +1,5 @@
+import { onlyDigits } from '@/utils/normalizer'
+
 type ViaCepResponse = {
   logradouro?: string
   bairro?: string
@@ -26,8 +28,6 @@ export class ViaCepNotFoundError extends ViaCepLookupError {
     this.name = 'ViaCepNotFoundError'
   }
 }
-
-const onlyDigits = (value: string) => value.replace(/\D/g, '')
 
 export function isViaCepLookupError(error: unknown): error is ViaCepLookupError {
   return error instanceof ViaCepLookupError

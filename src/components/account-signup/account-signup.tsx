@@ -1,27 +1,16 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  IdCard,
-  KeyRound,
-  LockKeyhole,
-  Mail,
-  MapPin,
-  Phone,
-  ShieldCheck,
-  Sparkles,
-  UserRound,
-} from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm, useFormContext, type FieldPath, type UseFormTrigger } from 'react-hook-form'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useForm, type FieldPath } from 'react-hook-form'
 
+import { Modal } from '@components/ui/modal'
 import { MultiStepForm } from '@components/ui/multstep-form/multstep-form'
-import { RHFInput } from '@components/ui/rhf-input/rhf-input'
-import { getAddressByCep, isViaCepLookupError, type ViaCepAddress } from '@lib/api/via-cep'
+import { LogoLink } from './logo-link'
+import { SignupAside } from './signup-aside'
+import { StepIndicator } from './step-indicator'
+import { SummaryState } from './summary-state'
 import {
   accountSignupDefaultValues,
   accountSignupSchema,
@@ -29,639 +18,198 @@ import {
   type AccountSignupFormValues,
   type CreateAccountPayload,
 } from '@lib/validations/account-signup'
+import { accountSignupFieldNames, accountSignupSteps, formSteps, signupStepFields } from './steps'
+import { createAccount, isCreateAccountServiceError } from '@/services/account.service'
+import type { AccountResponse } from '@/types/account-types'
+import type { ApiErrorResponse } from '@/types/api-response-types'
+import { normalizeFieldName } from '@/utils/normalizer'
 
 import {
-  ActionGrid,
-  AsideCopy,
-  AsideDescription,
-  AsideEyebrow,
-  AsideTitle,
   BackLink,
-  CityGrid,
-  DataCell,
-  DataDetail,
-  DataGrid,
-  DataLabel,
-  DataValue,
-  FormButton,
+  FormAlert,
   FormCard,
   FormContent,
   FormDescription,
   FormHeading,
   FormSection,
-  FormStack,
   FormStepMeta,
   FormTitle,
-  FullWidthPrimaryButton,
-  LogoLink as StyledLogoLink,
-  LogoMark,
-  LogoText,
   MobileHeader,
   PageRoot,
-  PasswordRule,
-  PasswordRules,
-  PhoneGrid,
-  PrimaryFormButton,
-  SetupIcon,
-  SetupItem,
-  SetupItemStatus,
-  SetupItemTitle,
-  SetupList,
-  SetupPanel,
-  SetupPanelHeader,
-  SetupPanelTitle,
-  SignupAside as StyledSignupAside,
-  StepIndicatorGrid,
-  StepIndicatorIcon,
-  StepIndicatorItem,
-  StepIndicatorTitle,
-  StreetGrid,
-  SuccessActions,
-  SuccessButton,
-  SuccessCard,
-  SuccessDescription,
-  SuccessIcon,
-  SuccessMeta,
-  SuccessTitle,
-  TwoColumnGrid,
-  WelcomeBadge,
-  type StepStatus,
+  SuccessModalActions,
+  SuccessModalButton,
+  SuccessModalMessage,
 } from './style'
 
-type StepProps = {
-  onNext: () => void
-  onBack: () => void
-  isLastStep: boolean
+const backendFieldAliases: Record<string, FieldPath<AccountSignupFormValues>> = {
+  address: 'address.cep',
+  cpf: 'CPF',
+  phone: 'phone.ddd',
 }
 
-const signupSteps = [
-  {
-    title: 'Titular',
-    description: 'Nome e documento da conta proprietária.',
-    icon: UserRound,
-  },
-  {
-    title: 'Contato',
-    description: 'E-mail e telefone do responsável.',
-    icon: Phone,
-  },
-  {
-    title: 'Endereço',
-    description: 'Endereço vinculado à conta.',
-    icon: MapPin,
-  },
-  {
-    title: 'Acesso',
-    description: 'Senha de acesso da conta.',
-    icon: ShieldCheck,
-  },
-]
-
-const ownerStepFields: Array<FieldPath<AccountSignupFormValues>> = ['name', 'lastName', 'CPF']
-
-const contactStepFields: Array<FieldPath<AccountSignupFormValues>> = [
-  'email',
-  'phone.ddd',
-  'phone.number',
-]
-
-const addressStepFields: Array<FieldPath<AccountSignupFormValues>> = [
-  'address.cep',
-  'address.street',
-  'address.number',
-  'address.neighborhood',
-  'address.city',
-  'address.state',
-]
-
-const securityStepFields: Array<FieldPath<AccountSignupFormValues>> = [
-  'password',
-  'confirmPassword',
-]
-
-const formSteps = [OwnerStep, ContactStep, AddressStep, SecurityStep]
-
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, '')
+type NormalizedBackendFieldError = {
+  field: FieldPath<AccountSignupFormValues>
+  message: string
 }
 
-function cpfMask(value: string) {
-  return onlyDigits(value)
-    .slice(0, 11)
-    .replace(/^(\d{3})(\d)/, '$1.$2')
-    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1-$2')
-}
+const defaultSignupErrorMessage =
+  'Não foi possível criar a conta. Revise os dados e tente novamente.'
 
-function cepMask(value: string) {
-  const digits = onlyDigits(value).slice(0, 8)
+function getBackendFieldErrors(apiError: ApiErrorResponse) {
+  const fallbackMessage = apiError.message ?? 'Revise este campo.'
+  const { fields } = apiError
 
-  if (digits.length <= 5) {
-    return digits
+  if (!fields) {
+    return []
   }
 
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`
-}
+  if (Array.isArray(fields)) {
+    return fields.reduce<NormalizedBackendFieldError[]>((errors, fieldError) => {
+      const fieldName =
+        typeof fieldError === 'string'
+          ? fieldError
+          : (fieldError.field ?? fieldError.name ?? fieldError.path)
+      const field = fieldName
+        ? normalizeFieldName(fieldName, {
+            aliases: backendFieldAliases,
+            fieldNames: accountSignupFieldNames,
+          })
+        : null
 
-function dddMask(value: string) {
-  return onlyDigits(value).slice(0, 2)
-}
-
-function phoneNumberMask(value: string) {
-  const digits = onlyDigits(value).slice(0, 9)
-
-  if (digits.length <= 4) {
-    return digits
-  }
-
-  if (digits.length <= 8) {
-    return `${digits.slice(0, 4)}-${digits.slice(4)}`
-  }
-
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`
-}
-
-function formatPhone(phone: CreateAccountPayload['phone']) {
-  return `(${phone.ddd}) ${phoneNumberMask(phone.number)}`
-}
-
-async function validateStep(
-  trigger: UseFormTrigger<AccountSignupFormValues>,
-  fields: Array<FieldPath<AccountSignupFormValues>>,
-  onNext: () => void,
-) {
-  const isValid = await trigger(fields, { shouldFocus: true })
-
-  if (isValid) {
-    onNext()
-  }
-}
-
-function LogoLink() {
-  return (
-    <StyledLogoLink href="/" aria-label="Your Auth, início">
-      <LogoMark>
-        <LockKeyhole size={16} strokeWidth={2.5} />
-      </LogoMark>
-      <LogoText>Your Auth</LogoText>
-    </StyledLogoLink>
-  )
-}
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  return (
-    <StepIndicatorGrid>
-      {signupSteps.map(({ title, icon: Icon }, index) => {
-        const status: StepStatus =
-          index === currentStep ? 'active' : index < currentStep ? 'complete' : 'pending'
-
-        return (
-          <StepIndicatorItem
-            key={title}
-            aria-current={status === 'active' ? 'step' : undefined}
-            status={status}
-          >
-            <StepIndicatorIcon status={status}>
-              {status === 'complete' ? <Check size={16} /> : <Icon size={16} />}
-            </StepIndicatorIcon>
-            <StepIndicatorTitle>{title}</StepIndicatorTitle>
-          </StepIndicatorItem>
-        )
-      })}
-    </StepIndicatorGrid>
-  )
-}
-
-function OwnerStep({ onNext }: StepProps) {
-  const { trigger } = useFormContext<AccountSignupFormValues>()
-
-  return (
-    <FormStack>
-      <TwoColumnGrid>
-        <RHFInput name="name" label="Nome" placeholder="Ana" type="text" />
-        <RHFInput name="lastName" label="Sobrenome" placeholder="Martins" type="text" />
-      </TwoColumnGrid>
-      <RHFInput name="CPF" label="CPF" placeholder="000.000.000-00" mask={cpfMask} type="text" />
-
-      <FullWidthPrimaryButton
-        type="button"
-        size="lg"
-        onClick={() => validateStep(trigger, ownerStepFields, onNext)}
-      >
-        Continuar <ArrowRight size={16} />
-      </FullWidthPrimaryButton>
-    </FormStack>
-  )
-}
-
-function ContactStep({ onNext, onBack }: StepProps) {
-  const { trigger } = useFormContext<AccountSignupFormValues>()
-
-  return (
-    <FormStack>
-      <RHFInput name="email" label="E-mail" placeholder="ana@empresa.com" type="email" />
-
-      <PhoneGrid>
-        <RHFInput name="phone.ddd" label="DDD" placeholder="11" mask={dddMask} type="text" />
-        <RHFInput
-          name="phone.number"
-          label="Telefone"
-          placeholder="99999-9999"
-          mask={phoneNumberMask}
-          type="text"
-        />
-      </PhoneGrid>
-
-      <ActionGrid>
-        <FormButton type="button" variant="outline" size="lg" onClick={onBack}>
-          <ArrowLeft size={16} /> Voltar
-        </FormButton>
-        <PrimaryFormButton
-          type="button"
-          size="lg"
-          onClick={() => validateStep(trigger, contactStepFields, onNext)}
-        >
-          Continuar <ArrowRight size={16} />
-        </PrimaryFormButton>
-      </ActionGrid>
-    </FormStack>
-  )
-}
-
-function AddressStep({ onNext, onBack }: StepProps) {
-  const { clearErrors, setError, setValue, trigger } = useFormContext<AccountSignupFormValues>()
-  const [isAddressLookupLoading, setIsAddressLookupLoading] = useState(false)
-  const addressLookupControllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => {
-      addressLookupControllerRef.current?.abort()
-    }
-  }, [])
-
-  function clearAddressFields() {
-    setValue('address.street', '', { shouldDirty: true })
-    setValue('address.neighborhood', '', { shouldDirty: true })
-    setValue('address.city', '', { shouldDirty: true })
-    setValue('address.state', '', { shouldDirty: true })
-  }
-
-  function fillAddressFields(address: ViaCepAddress) {
-    setValue('address.street', address.street, { shouldDirty: true, shouldValidate: true })
-    setValue('address.neighborhood', address.neighborhood, {
-      shouldDirty: true,
-      shouldValidate: true,
-    })
-    setValue('address.city', address.city, { shouldDirty: true, shouldValidate: true })
-    setValue('address.state', address.state, { shouldDirty: true, shouldValidate: true })
-    clearErrors([
-      'address.cep',
-      'address.street',
-      'address.neighborhood',
-      'address.city',
-      'address.state',
-    ])
-  }
-
-  function handleCepChange(nextCep: string) {
-    const cepDigits = onlyDigits(nextCep)
-
-    clearErrors('address.cep')
-    addressLookupControllerRef.current?.abort()
-    addressLookupControllerRef.current = null
-
-    if (cepDigits.length !== 8) {
-      setIsAddressLookupLoading(false)
-      return
-    }
-
-    const controller = new AbortController()
-
-    addressLookupControllerRef.current = controller
-    setIsAddressLookupLoading(true)
-    clearAddressFields()
-
-    void getAddressByCep(cepDigits, controller.signal)
-      .then((address) => {
-        if (addressLookupControllerRef.current !== controller) {
-          return
-        }
-
-        fillAddressFields(address)
-      })
-      .catch((error: unknown) => {
-        if (addressLookupControllerRef.current !== controller || controller.signal.aborted) {
-          return
-        }
-
-        setError('address.cep', {
-          type: 'manual',
-          message: isViaCepLookupError(error)
-            ? error.message
-            : 'Não foi possível buscar o endereço pelo CEP.',
+      if (field) {
+        errors.push({
+          field,
+          message:
+            typeof fieldError === 'string'
+              ? fallbackMessage
+              : (fieldError.message ?? fallbackMessage),
         })
-      })
-      .finally(() => {
-        if (addressLookupControllerRef.current === controller) {
-          addressLookupControllerRef.current = null
-          setIsAddressLookupLoading(false)
-        }
-      })
+      }
+
+      return errors
+    }, [])
   }
 
-  return (
-    <FormStack>
-      <RHFInput
-        name="address.cep"
-        label="CEP"
-        placeholder="00000-000"
-        mask={cepMask}
-        onValueChange={handleCepChange}
-        type="text"
-      />
+  return Object.entries(fields).reduce<NormalizedBackendFieldError[]>(
+    (errors, [fieldName, message]) => {
+      const field = normalizeFieldName(fieldName, {
+        aliases: backendFieldAliases,
+        fieldNames: accountSignupFieldNames,
+      })
 
-      <StreetGrid>
-        <RHFInput
-          name="address.street"
-          label="Logradouro"
-          placeholder="Rua das Flores"
-          disabled={isAddressLookupLoading}
-          type="text"
-        />
-        <RHFInput
-          name="address.number"
-          label="Número"
-          placeholder="120"
-          disabled={isAddressLookupLoading}
-          type="text"
-        />
-      </StreetGrid>
+      if (field) {
+        errors.push({
+          field,
+          message: message || fallbackMessage,
+        })
+      }
 
-      <RHFInput
-        name="address.neighborhood"
-        label="Bairro"
-        placeholder="Centro"
-        disabled={isAddressLookupLoading}
-        type="text"
-      />
-
-      <CityGrid>
-        <RHFInput
-          name="address.city"
-          label="Cidade"
-          placeholder="São Paulo"
-          disabled={isAddressLookupLoading}
-          type="text"
-        />
-        <RHFInput
-          name="address.state"
-          label="Estado"
-          placeholder="SP"
-          disabled={isAddressLookupLoading}
-          type="text"
-        />
-      </CityGrid>
-
-      <ActionGrid>
-        <FormButton type="button" variant="outline" size="lg" onClick={onBack}>
-          <ArrowLeft size={16} /> Voltar
-        </FormButton>
-        <PrimaryFormButton
-          type="button"
-          size="lg"
-          disabled={isAddressLookupLoading}
-          onClick={() => validateStep(trigger, addressStepFields, onNext)}
-        >
-          Continuar <ArrowRight size={16} />
-        </PrimaryFormButton>
-      </ActionGrid>
-    </FormStack>
+      return errors
+    },
+    [],
   )
 }
 
-function PasswordChecklist() {
-  const { watch } = useFormContext<AccountSignupFormValues>()
-  const password = watch('password')
-  const rules = [
-    {
-      label: '8 caracteres',
-      passed: password.length >= 8,
-    },
-    {
-      label: 'Letra minúscula',
-      passed: /[a-z]/.test(password),
-    },
-    {
-      label: 'Letra maiúscula',
-      passed: /[A-Z]/.test(password),
-    },
-    {
-      label: 'Número',
-      passed: /[0-9]/.test(password),
-    },
-  ]
+function getStepIndexForField(field: FieldPath<AccountSignupFormValues>) {
+  const stepIndex = signupStepFields.findIndex((fields) => fields.includes(field))
 
-  return (
-    <PasswordRules>
-      {rules.map((rule) => (
-        <PasswordRule key={rule.label} passed={rule.passed}>
-          <Check size={14} />
-          {rule.label}
-        </PasswordRule>
-      ))}
-    </PasswordRules>
-  )
-}
-
-function SecurityStep({ onBack }: StepProps) {
-  const {
-    formState: { isSubmitting },
-    trigger,
-  } = useFormContext<AccountSignupFormValues>()
-
-  return (
-    <FormStack>
-      <RHFInput name="password" label="Senha" placeholder="********" type="password" />
-      <PasswordChecklist />
-      <RHFInput
-        name="confirmPassword"
-        label="Confirmar senha"
-        placeholder="********"
-        type="password"
-      />
-
-      <ActionGrid>
-        <FormButton type="button" variant="outline" size="lg" onClick={onBack}>
-          <ArrowLeft size={16} /> Voltar
-        </FormButton>
-        <PrimaryFormButton
-          type="submit"
-          size="lg"
-          disabled={isSubmitting}
-          onClick={() => trigger(securityStepFields, { shouldFocus: true })}
-        >
-          Criar conta <ArrowRight size={16} />
-        </PrimaryFormButton>
-      </ActionGrid>
-    </FormStack>
-  )
-}
-
-type SignupAsideProps = {
-  currentStep: number
-  isSignupComplete: boolean
-}
-
-function SignupAside({ currentStep, isSignupComplete }: SignupAsideProps) {
-  const setupItems = [
-    {
-      icon: IdCard,
-      title: 'Conta proprietária',
-      status: 'Nome, sobrenome e CPF',
-    },
-    {
-      icon: Mail,
-      title: 'Contato principal',
-      status: 'E-mail e telefone',
-    },
-    {
-      icon: MapPin,
-      title: 'Endereço cadastral',
-      status: 'Dados completos',
-    },
-    {
-      icon: KeyRound,
-      title: 'Credenciais',
-      status: 'Senha forte',
-    },
-  ]
-
-  return (
-    <StyledSignupAside>
-      <LogoLink />
-
-      <AsideCopy>
-        <AsideEyebrow>
-          <Sparkles size={14} />
-          Cadastro de conta
-        </AsideEyebrow>
-        <AsideTitle>Crie sua conta Your Auth.</AsideTitle>
-        <AsideDescription>
-          Uma jornada curta para reunir identificação, contato, endereço e senha antes da ativação
-          real da conta.
-        </AsideDescription>
-      </AsideCopy>
-
-      <SetupPanel>
-        <SetupPanelHeader>
-          <SetupPanelTitle>Dados para criação da conta:</SetupPanelTitle>
-          <WelcomeBadge>Bem vindo!</WelcomeBadge>
-        </SetupPanelHeader>
-
-        <SetupList>
-          {setupItems.map(({ icon: Icon, title, status: statusText }, index) => {
-            const status: StepStatus =
-              isSignupComplete || index < currentStep
-                ? 'complete'
-                : index === currentStep
-                  ? 'active'
-                  : 'pending'
-            const StatusIcon = status === 'complete' ? CheckCircle2 : Icon
-
-            return (
-              <SetupItem key={title} status={status}>
-                <SetupIcon complete={status === 'complete'}>
-                  <StatusIcon size={16} />
-                </SetupIcon>
-                <div>
-                  <SetupItemTitle>{title}</SetupItemTitle>
-                  <SetupItemStatus status={status}>
-                    {status === 'complete' ? 'Concluído' : statusText}
-                  </SetupItemStatus>
-                </div>
-              </SetupItem>
-            )
-          })}
-        </SetupList>
-      </SetupPanel>
-    </StyledSignupAside>
-  )
-}
-
-function SuccessState({ data, onEdit }: { data: CreateAccountPayload; onEdit: () => void }) {
-  return (
-    <SuccessCard>
-      <SuccessIcon>
-        <CheckCircle2 size={24} />
-      </SuccessIcon>
-      <SuccessMeta>Cadastro validado</SuccessMeta>
-      <SuccessTitle>Os dados da conta estão prontos.</SuccessTitle>
-      <SuccessDescription>
-        O payload local segue o contrato de criação de conta proprietária. A chamada real ao backend
-        entra quando conectarmos este fluxo.
-      </SuccessDescription>
-
-      <DataGrid>
-        <DataCell>
-          <DataLabel>Titular</DataLabel>
-          <DataValue>
-            {data.name} {data.lastName}
-          </DataValue>
-          <DataDetail>{cpfMask(data.CPF)}</DataDetail>
-        </DataCell>
-        <DataCell>
-          <DataLabel>Contato</DataLabel>
-          <DataValue>
-            <Mail size={14} /> {data.email}
-          </DataValue>
-          <DataDetail>{formatPhone(data.phone)}</DataDetail>
-        </DataCell>
-        <DataCell wide>
-          <DataLabel>Endereço</DataLabel>
-          <DataValue>
-            {data.address.street}, {data.address.number}
-          </DataValue>
-          <DataDetail>
-            {data.address.neighborhood}, {data.address.city} - {data.address.state} - CEP{' '}
-            {cepMask(data.address.cep)}
-          </DataDetail>
-        </DataCell>
-      </DataGrid>
-
-      <SuccessActions>
-        <SuccessButton type="button" size="lg">
-          Criar conta
-        </SuccessButton>
-        <SuccessButton type="button" variant="outline" size="lg" onClick={onEdit}>
-          Editar dados
-        </SuccessButton>
-      </SuccessActions>
-    </SuccessCard>
-  )
+  return stepIndex === -1 ? 0 : stepIndex
 }
 
 export function AccountSignup() {
   const [currentStep, setCurrentStep] = useState(0)
   const [submittedData, setSubmittedData] = useState<CreateAccountPayload | null>(null)
+  const [createdAccount, setCreatedAccount] = useState<AccountResponse | null>(null)
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+  const [pendingFocusField, setPendingFocusField] =
+    useState<FieldPath<AccountSignupFormValues> | null>(null)
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const methods = useForm<AccountSignupFormValues>({
     defaultValues: accountSignupDefaultValues,
     mode: 'onTouched',
     reValidateMode: 'onChange',
     resolver: zodResolver(accountSignupSchema),
   })
-  const currentStepContent = signupSteps[currentStep] ?? signupSteps[0]
+  const currentStepContent = accountSignupSteps[currentStep] ?? accountSignupSteps[0]
+  const successAccountName = createdAccount
+    ? `${createdAccount.name ?? ''} ${createdAccount.lastName ?? ''}`.trim() || 'sua conta'
+    : 'sua conta'
 
-  function handleSubmit(data: AccountSignupFormValues) {
+  useEffect(() => {
+    if (!pendingFocusField) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      methods.setFocus(pendingFocusField)
+      setPendingFocusField(null)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [currentStep, methods, pendingFocusField])
+
+  function handleReview(data: AccountSignupFormValues) {
+    setSubmitErrorMessage(null)
     setSubmittedData(toCreateAccountPayload(data))
   }
 
-  function handleEdit() {
+  function handleBackToStart() {
+    methods.clearErrors()
+    setSubmitErrorMessage(null)
     setSubmittedData(null)
+    setCurrentStep(0)
+  }
+
+  async function handleCreateAccount() {
+    if (!submittedData) {
+      return
+    }
+
+    setIsCreatingAccount(true)
+    setSubmitErrorMessage(null)
+
+    try {
+      const account = await createAccount(submittedData)
+
+      setCreatedAccount(account)
+      setIsSuccessModalOpen(true)
+    } catch (error: unknown) {
+      const createAccountError = isCreateAccountServiceError(error) ? error : null
+      const apiError = createAccountError?.response ?? null
+      const fieldErrors = apiError ? getBackendFieldErrors(apiError) : []
+
+      setSubmitErrorMessage(createAccountError?.message ?? defaultSignupErrorMessage)
+
+      if (fieldErrors.length === 0) {
+        return
+      }
+
+      setSubmittedData(null)
+
+      fieldErrors.forEach(({ field, message }) => {
+        methods.setError(field, {
+          type: 'server',
+          message,
+        })
+      })
+
+      const [{ field: firstErrorField }] = fieldErrors
+      const targetStep = getStepIndexForField(firstErrorField)
+
+      setCurrentStep(targetStep)
+      setPendingFocusField(firstErrorField)
+    } finally {
+      setIsCreatingAccount(false)
+    }
   }
 
   return (
     <PageRoot>
-      <SignupAside currentStep={currentStep} isSignupComplete={submittedData !== null} />
+      <SignupAside
+        currentStep={currentStep}
+        isSignupComplete={submittedData !== null || createdAccount !== null}
+      />
 
       <FormSection>
         <FormContent>
@@ -674,23 +222,31 @@ export function AccountSignup() {
           </MobileHeader>
 
           {submittedData ? (
-            <SuccessState data={submittedData} onEdit={handleEdit} />
+            <SummaryState
+              data={submittedData}
+              errorMessage={submitErrorMessage}
+              isLoading={isCreatingAccount}
+              onBackToStart={handleBackToStart}
+              onCreate={handleCreateAccount}
+            />
           ) : (
             <FormCard>
               <StepIndicator currentStep={currentStep} />
 
               <FormHeading>
                 <FormStepMeta>
-                  Etapa {currentStep + 1} de {signupSteps.length}
+                  Etapa {currentStep + 1} de {accountSignupSteps.length}
                 </FormStepMeta>
                 <FormTitle>{currentStepContent.title}</FormTitle>
                 <FormDescription>{currentStepContent.description}</FormDescription>
               </FormHeading>
 
+              {submitErrorMessage && <FormAlert role="alert">{submitErrorMessage}</FormAlert>}
+
               <MultiStepForm<AccountSignupFormValues>
                 currentStep={currentStep}
                 methods={methods}
-                onSubmit={handleSubmit}
+                onSubmit={handleReview}
                 setCurrentStep={setCurrentStep}
                 steps={formSteps}
               />
@@ -698,6 +254,24 @@ export function AccountSignup() {
           )}
         </FormContent>
       </FormSection>
+
+      <Modal
+        open={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Conta criada com sucesso"
+        subtitle={`Boas-vindas, ${successAccountName}.`}
+        icon={<CheckCircle2 size={24} />}
+      >
+        <SuccessModalMessage>
+          Sua conta Your Auth foi criada. Quando a tela de login estiver disponível, você poderá
+          seguir por aqui.
+        </SuccessModalMessage>
+        <SuccessModalActions>
+          <SuccessModalButton type="button" size="lg">
+            Ir para login
+          </SuccessModalButton>
+        </SuccessModalActions>
+      </Modal>
     </PageRoot>
   )
 }
