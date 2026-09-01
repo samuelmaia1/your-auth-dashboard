@@ -26,6 +26,7 @@
       "@docs/*": ["docs/*"],
       "@hooks/*": ["hooks/*"],
       "@lib/*": ["lib/*"],
+      "@theme/*": ["theme/*"],
       "@ui/*": ["components/ui/*"]
     }
   },

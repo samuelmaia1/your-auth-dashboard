@@ -2,7 +2,7 @@
 
 Your Auth é um projeto de autenticação e identidade pensado para servir como base moderna para aplicações SaaS, produtos digitais e times de desenvolvimento que precisam lidar com usuários, contas, sessões e segurança de acesso.
 
-Atualmente, este repositório contém uma landing page pública pronta em Next.js. Ela apresenta a proposta do produto, a identidade visual inicial e a narrativa de valor da plataforma, mas ainda não implementa cadastro, login, sessões, tokens, APIs de autenticação, painel administrativo ou backend.
+Atualmente, este repositório contém uma landing page pública e um formulário client-side de cadastro em Next.js. O formulário valida e organiza os dados localmente, mas ainda não cria uma conta em backend nem implementa login, sessões, tokens, APIs de autenticação ou painel administrativo.
 
 ## Objetivo
 
@@ -30,10 +30,12 @@ Já existe:
 - identidade visual inicial do produto;
 - navegação por âncoras na própria página;
 - menu responsivo para dispositivos móveis;
-- metadados da aplicação e ícones em `app/layout.tsx`;
-- configuração de estilos globais com Tailwind CSS;
-- componente base de botão em `components/ui/button.tsx`;
-- utilitário `cn` para combinar classes CSS em `lib/utils.ts`;
+- formulário responsivo de cadastro em `/cadastro`, com validação client-side;
+- consulta de endereço por CEP via ViaCEP;
+- metadados da aplicação e ícones em `src/app/layout.tsx`;
+- tema MUI centralizado, com paletas clara e escura;
+- componentes estilizados com MUI/Emotion em arquivos `style.ts` locais;
+- componente base de botão em `src/components/ui/button/`;
 - Vercel Analytics carregado apenas em produção.
 
 Ainda não existe neste repositório:
@@ -41,7 +43,7 @@ Ainda não existe neste repositório:
 - backend de autenticação;
 - rotas de API;
 - banco de dados;
-- cadastro ou login funcional;
+- criação persistida de conta ou login funcional;
 - gerenciamento real de sessões ou tokens;
 - recuperação de senha;
 - verificação de e-mail;
@@ -56,11 +58,10 @@ Stack identificada no repositório:
 - Next.js 16 com App Router;
 - React 19;
 - TypeScript;
-- Tailwind CSS 4;
-- shadcn/base-nova via `components.json`;
-- Base UI para primitivos de UI;
+- MUI com Emotion para componentes e estilos;
+- React Hook Form e Zod para o formulário de cadastro;
+- Axios para a consulta de CEP;
 - lucide-react para ícones;
-- class-variance-authority, clsx e tailwind-merge para composição de classes;
 - ESLint 9 com configurações do Next.js;
 - Prettier 3;
 - Vercel Analytics.
@@ -118,22 +119,24 @@ Os mesmos scripts também podem ser executados com npm usando `npm run`, exceto 
 ## Estrutura Principal
 
 ```text
-app/
-  globals.css        Estilos globais, tema e tokens CSS.
-  layout.tsx         Layout raiz, metadados, viewport e Analytics em produção.
-  page.tsx           Rota principal que renderiza a landing page.
-
-components/
-  your-auth-landing.tsx  Landing page pública do Your Auth.
-  ui/button.tsx          Componente base de botão.
-
-lib/
-  utils.ts           Utilitário `cn` para composição de classes.
+src/
+  app/
+    cadastro/page.tsx  Rota do formulário de cadastro.
+    layout.tsx         Layout raiz, provider MUI, metadados, viewport e Analytics.
+    page.tsx           Rota principal que renderiza a landing page.
+  components/
+    account-signup/       Formulário de cadastro e seu `style.ts`.
+    your-auth-landing/    Landing page e seu `style.ts`.
+    ui/                   Componentes reutilizáveis e estilos correspondentes.
+  lib/
+    api/                  Clientes e definições das chamadas HTTP.
+    validations/          Schemas e tipos de validação.
+  theme/
+    theme.ts              Paletas, breakpoints, tipografia e estilos globais MUI.
 
 public/
   ...                Ícones e imagens estáticas usadas ou disponíveis para o app.
 
-components.json     Configuração de UI/shadcn.
 next.config.mjs     Configuração do Next.js.
 eslint.config.mjs   Configuração do ESLint.
 prettier.config.mjs Configuração do Prettier.
@@ -142,7 +145,7 @@ tsconfig.json       Configuração TypeScript.
 
 ## Landing Page Pública
 
-A landing page está em `components/your-auth-landing.tsx` e é renderizada por `app/page.tsx`.
+A landing page está em `src/components/your-auth-landing/` e é renderizada por `src/app/page.tsx`.
 
 Ela apresenta:
 
@@ -162,13 +165,15 @@ Os textos da landing comunicam a visão e o posicionamento do produto. O exemplo
 - Exibição da landing page pública.
 - Layout responsivo com menu mobile.
 - Navegação por âncoras.
-- Tema visual com variáveis CSS e suporte a esquema claro/escuro.
+- Formulário de cadastro com etapas, máscaras e validação client-side.
+- Preenchimento de endereço por CEP via ViaCEP.
+- Tema MUI com paletas clara/escura e seleção automática pelo sistema.
 - Metadados e ícones da aplicação.
 - Analytics em ambiente de produção.
 
 ## Funcionalidades Planejadas
 
-- Cadastro de usuários.
+- Persistência real do cadastro de usuários.
 - Login e logout.
 - Autenticação social.
 - Gerenciamento de identidade.
@@ -187,9 +192,10 @@ Os textos da landing comunicam a visão e o posicionamento do produto. O exemplo
 - Leia o código existente antes de propor ou executar mudanças.
 - Preserve a landing page atual quando a tarefa não pedir alterações visuais explicitamente.
 - Mantenha a separação entre o que está implementado e o que é planejamento.
-- Use TypeScript e os aliases existentes, como `@/components` e `@/lib/utils`.
+- Use TypeScript e os aliases existentes, como `@components/*`, `@lib/*` e `@theme/*`.
 - Siga os scripts e ferramentas já configurados no `package.json`.
-- Mantenha o padrão de estilos com Tailwind CSS e variáveis definidas em `app/globals.css`.
+- Mantenha os estilos em um arquivo `style.ts` ao lado do componente, usando `styled` do MUI.
+- Centralize cores e configurações globais em `src/theme/theme.ts`.
 - Use ícones de `lucide-react` quando fizer sentido dentro do padrão atual.
 - Evite adicionar bibliotecas novas sem necessidade clara.
 - Não introduza backend, banco de dados, rotas de API ou autenticação real sem pedido explícito.

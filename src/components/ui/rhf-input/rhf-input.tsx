@@ -15,6 +15,7 @@ interface RHFInputProps<TFieldValues extends FieldValues = FieldValues> {
   disabled?: boolean
   endIcon?: IconName
   onEndIconClick?: () => void
+  onValueChange?: (value: string) => void
   onBlur?: (value: string) => void | Promise<void>
 }
 
@@ -28,6 +29,7 @@ export function RHFInput<TFieldValues extends FieldValues = FieldValues>({
   disabled,
   endIcon,
   onEndIconClick,
+  onValueChange,
   onBlur,
 }: RHFInputProps<TFieldValues>) {
   const { control } = useFormContext<TFieldValues>()
@@ -61,6 +63,7 @@ export function RHFInput<TFieldValues extends FieldValues = FieldValues>({
                 const nextValue = mask ? mask(e.target.value).replace(/\D/g, '') : e.target.value
 
                 field.onChange(nextValue)
+                onValueChange?.(nextValue)
               }}
               error={!!fieldState.error}
               helperText={fieldState.error?.message}
