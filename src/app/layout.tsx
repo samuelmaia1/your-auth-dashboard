@@ -1,11 +1,11 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import './globals.css'
+
+import { AppThemeProvider } from '@components/theme-provider/theme-provider'
 
 export const metadata: Metadata = {
   title: 'Your Auth — Identidade, sem complicação',
   description: 'Autenticação segura, flexível e pronta para escalar seus produtos SaaS.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -39,10 +39,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className="bg-background">
-      <body className="antialiased">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+    <html lang="pt-BR">
+      <body>
+        <AppThemeProvider>
+          {children}
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </AppThemeProvider>
       </body>
     </html>
   )

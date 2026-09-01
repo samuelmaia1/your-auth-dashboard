@@ -28,12 +28,12 @@ O projeto contém uma landing page pública em Next.js.
 
 Arquivos centrais:
 
-- `app/page.tsx`: renderiza a landing page.
-- `app/layout.tsx`: define metadados, viewport, ícones, idioma `pt-BR` e Vercel Analytics em produção.
-- `app/globals.css`: define imports do Tailwind, tema, tokens CSS, modo claro/escuro e estilos base.
-- `components/your-auth-landing.tsx`: componente client-side da landing page.
-- `components/ui/button.tsx`: componente base de botão com Base UI e class-variance-authority.
-- `lib/utils.ts`: utilitário `cn` com `clsx` e `tailwind-merge`.
+- `src/app/page.tsx`: renderiza a landing page.
+- `src/app/layout.tsx`: define metadados, viewport, ícones, idioma `pt-BR`, provider MUI e Vercel Analytics em produção.
+- `src/theme/theme.ts`: centraliza as paletas clara/escura, breakpoints e estilos globais do MUI.
+- `src/components/your-auth-landing/`: componente client-side e estilos da landing page.
+- `src/components/account-signup/`: fluxo client-side de cadastro e estilos correspondentes.
+- `src/components/ui/button/`: componente base de botão construído com MUI.
 
 Não há backend, rotas de API, banco de dados, autenticação real ou integrações reais implementadas neste momento.
 
@@ -79,7 +79,7 @@ O snippet visual da landing com endpoint, credenciais e chave falsa é apenas de
 
 - Use TypeScript.
 - Respeite `strict: true` no `tsconfig.json`.
-- Use aliases existentes, especialmente `@/*`, `@/components`, `@/components/ui`, `@/lib` e `@/lib/utils`.
+- Use aliases existentes, especialmente `@/*`, `@components/*`, `@ui/*`, `@lib/*` e `@theme/*`.
 - Siga o estilo do Prettier: sem ponto e vírgula, aspas simples, trailing commas e largura de 100 colunas.
 - Use ESLint conforme configurado em `eslint.config.mjs`.
 - Prefira componentes pequenos, claros e coesos.
@@ -90,11 +90,10 @@ O snippet visual da landing com endpoint, credenciais e chave falsa é apenas de
 
 - A aplicação usa Next.js App Router.
 - Componentes interativos devem ser client components com `'use client'` quando necessário.
-- Estilos são feitos principalmente com classes Tailwind CSS.
-- Tokens de cor, raio e tema ficam em `app/globals.css`.
-- A configuração de UI está em `components.json`, com estilo `base-nova`, CSS variables e ícones `lucide`.
+- Estilos são feitos com `styled` do MUI em um arquivo `style.ts` ao lado do componente correspondente.
+- Cores, raios, breakpoints e configurações globais ficam centralizados em `src/theme/theme.ts`.
+- Não use classes Tailwind, estilos inline ou a prop `sx` nos componentes visuais.
 - Use `lucide-react` para ícones quando houver ícone adequado.
-- Use `cn` de `@/lib/utils` para combinar classes condicionais.
 - Preserve a linguagem visual da landing: layout limpo, tipografia forte, tons neutros, acento verde, bordas sutis, cards simples e botões arredondados.
 
 ## Frontend e Backend
@@ -103,7 +102,7 @@ Frontend existente:
 
 - Next.js;
 - React;
-- Tailwind CSS;
+- MUI com Emotion;
 - componentes em `components/`;
 - rota principal em `app/page.tsx`.
 
@@ -112,6 +111,33 @@ Backend existente:
 - nenhum backend foi encontrado no repositório.
 
 Se uma tarefa pedir backend ou autenticação real, primeiro leia a base atual, explique as opções compatíveis e implemente apenas o escopo solicitado. Não simule segurança real com mocks enganosos.
+
+## Contrato OpenAPI
+
+O frontend deve integrar com o backend usando o contrato OpenAPI versionado no projeto. O caminho esperado para esse contrato é `docs/api/openapi.json`, dentro da raiz do projeto frontend.
+
+Antes de implementar qualquer integração com backend, leia `docs/api/openapi.json` e use esse arquivo como fonte única da verdade para:
+
+- endpoints;
+- métodos HTTP;
+- path params;
+- query params;
+- headers;
+- request bodies;
+- response bodies;
+- status codes;
+- schemas/DTOs;
+- autenticação exigida por rota.
+
+Não invente endpoints, payloads, responses, status codes ou nomes de campos. Se o contrato estiver ausente, incompleto ou inconsistente, não implemente a integração; informe exatamente o que falta no contrato.
+
+Diferencie corretamente fluxos web com cookies HTTP-only, bearer token e API key de projeto conforme definido no OpenAPI. Para rotas com autenticação via cookie, use `credentials: "include"` ou equivalente. Para rotas com `projectApiKey`, envie a chave conforme o contrato, preferencialmente no header `X-API-Key`.
+
+Use variável de ambiente para a URL base da API, por exemplo `NEXT_PUBLIC_API_BASE_URL`. Centralize chamadas HTTP em uma camada de API/client/services/hooks, conforme o padrão existente no frontend. Não espalhe `fetch` ou `axios` diretamente em componentes visuais.
+
+Tipos TypeScript devem ser derivados do OpenAPI sempre que possível. Não edite `docs/api/openapi.json` manualmente no frontend. Se o contrato precisar mudar, solicite alteração no backend e regeneração do arquivo.
+
+Não crie mocks enganosos quando houver contrato real disponível.
 
 ## Comandos Úteis
 
