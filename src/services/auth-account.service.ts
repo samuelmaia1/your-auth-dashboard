@@ -3,7 +3,7 @@ import axios from 'axios'
 import { api } from '@lib/api/axios'
 import { apiUrls } from '@lib/api/urls'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
-import type { ApiErrorResponse, ApiPageResponse } from '@/types/api-response-types'
+import type { ApiErrorResponse } from '@/types/api-response-types'
 
 const defaultAuthAccountErrorMessage =
   'Não foi possível autenticar a conta. Revise os dados e tente novamente.'
@@ -95,10 +95,9 @@ export async function loginAccount(data: LoginAccountRequest) {
 }
 
 export async function validateAccountSession() {
-  await api.get<ApiPageResponse<unknown>>(apiUrls.projects.list, {
-    params: {
-      page: 0,
-      size: 1,
-    },
-  })
+  try {
+    return await api.get<AccountResponse>(apiUrls.accounts.me)
+  } catch (error: unknown) {
+    throw new AuthAccountServiceError(normalizeAuthAccountError(error))
+  }
 }

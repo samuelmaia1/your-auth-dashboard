@@ -5,6 +5,8 @@ const pathParam = (value: string | number) => encodeURIComponent(String(value))
 export const apiUrls = {
   accounts: {
     create: '/accounts/create',
+    me: '/accounts/me',
+    summary: '/accounts/me/summary',
   },
   auth: {
     login: '/auth/login',

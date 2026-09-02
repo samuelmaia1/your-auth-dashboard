@@ -220,7 +220,7 @@ export function AccountSignup() {
             <LogoLink />
             <BackLink href="/">
               <ArrowLeft size={16} />
-              Landing
+              Tela inicial
             </BackLink>
           </MobileHeader>
 

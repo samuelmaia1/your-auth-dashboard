@@ -21,6 +21,7 @@ export type AuthContextValue = {
   account: AccountResponse | null
   authenticatedAccount: AccountResponse | null
   isAuthenticated: boolean
+  isLoadingAccount: boolean
   isCheckingSession: boolean
   status: AuthSessionStatus
   login: (data: LoginAccountRequest) => Promise<AccountResponse>
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [authenticatedAccount, setAuthenticatedAccount] = useState<AccountResponse | null>(null)
+  const [isLoadingAccount, setIsLoadingAccount] = useState(false)
   const [status, setStatus] = useState<AuthSessionStatus>('checking')
   const authenticatedAccountRef = useRef<AccountResponse | null>(authenticatedAccount)
   const validationRequestIdRef = useRef(0)
@@ -59,11 +61,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     validationRequestIdRef.current = validationRequestId
     setStatus('checking')
+    setIsLoadingAccount(true)
 
     try {
-      await validateAccountSession()
+      const account = await validateAccountSession()
 
       if (validationRequestIdRef.current === validationRequestId) {
+        authenticatedAccountRef.current = account
+        setAuthenticatedAccount(account)
         setStatus('authenticated')
       }
 
@@ -76,6 +81,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return false
+    } finally {
+      if (validationRequestIdRef.current === validationRequestId) {
+        setIsLoadingAccount(false)
+      }
     }
   }, [])
 
@@ -86,6 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       validationRequestIdRef.current += 1
       authenticatedAccountRef.current = account
       setAuthenticatedAccount(account)
+      setIsLoadingAccount(false)
       setStatus('authenticated')
       router.replace(privateEntryPath)
 
@@ -140,13 +150,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       account: authenticatedAccount,
       authenticatedAccount,
       isAuthenticated: status === 'authenticated',
+      isLoadingAccount,
       isCheckingSession: status === 'checking',
       status,
       login,
       validateSession,
       fetchAccountData,
     }),
-    [authenticatedAccount, fetchAccountData, login, status, validateSession],
+    [authenticatedAccount, fetchAccountData, isLoadingAccount, login, status, validateSession],
   )
   const shouldShowSessionLoading =
     status === 'checking' ||

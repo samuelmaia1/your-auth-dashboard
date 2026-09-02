@@ -153,7 +153,7 @@ export function AccountLogin() {
             <LogoLink />
             <BackLink href="/">
               <ArrowLeft size={16} />
-              Landing
+              Tela inicial
             </BackLink>
           </MobileHeader>
 
