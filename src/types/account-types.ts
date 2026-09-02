@@ -22,6 +22,12 @@ export interface CreateAccountRequest {
   phone: PhoneDTO
 }
 
+export interface LoginAccountRequest {
+  password: string
+  email?: string
+  cpf?: string
+}
+
 export interface AccountResponse {
   id?: string
   name?: string

@@ -1,14 +1,17 @@
 'use client'
 
-import { ArrowLeft, ArrowRight, LogIn, UserPlus } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, LoaderCircle, LogIn, UserPlus } from 'lucide-react'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 
 import { Input } from '@components/ui/input/input'
 import { LogoLink } from '@components/account-signup/logo-link'
+import { isAuthAccountServiceError, loginAccount } from '@/services/auth-account.service'
+import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 
 import { LoginAside } from './login-aside'
 import {
   BackLink,
+  FormAlert,
   FormCard,
   FormContent,
   FormDescription,
@@ -19,11 +22,13 @@ import {
   LoginForm,
   LoginFormHeading,
   LoginPrimaryButton,
+  LoginSuccessAlert,
   LoginSignupFooter,
   LoginSignupFooterLink,
   LoginSignupFooterText,
   MobileHeader,
   PageRoot,
+  SubmitLoadingIcon,
 } from './style'
 
 type LoginFormValues = {
@@ -31,14 +36,56 @@ type LoginFormValues = {
   password: string
 }
 
+type LoginField = keyof LoginFormValues
+type LoginFieldErrors = Partial<Record<LoginField, string>>
+
 const initialLoginFormValues: LoginFormValues = {
   email: '',
   password: '',
 }
 
+const defaultLoginErrorMessage =
+  'Não foi possível entrar. Confira suas credenciais e tente novamente.'
+
+function validateLoginForm(data: LoginFormValues) {
+  const errors: LoginFieldErrors = {}
+  const email = data.email.trim()
+
+  if (!email) {
+    errors.email = 'Informe seu e-mail.'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = 'Informe um e-mail válido.'
+  }
+
+  if (!data.password) {
+    errors.password = 'Informe sua senha.'
+  }
+
+  return errors
+}
+
+function toLoginAccountPayload(data: LoginFormValues): LoginAccountRequest {
+  return {
+    email: data.email.trim(),
+    password: data.password,
+  }
+}
+
 export function AccountLogin() {
   const [formValues, setFormValues] = useState(initialLoginFormValues)
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
+  const [authenticatedAccount, setAuthenticatedAccount] = useState<AccountResponse | null>(null)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const authenticatedAccountName = authenticatedAccount
+    ? `${authenticatedAccount.name ?? ''} ${authenticatedAccount.lastName ?? ''}`.trim()
+    : ''
+  const successMessage = authenticatedAccount
+    ? authenticatedAccountName
+      ? `Login realizado. Boas-vindas, ${authenticatedAccountName}.`
+      : 'Login realizado. Sua sessão foi iniciada com segurança.'
+    : null
 
   function handleFieldChange(field: keyof LoginFormValues) {
     return (event: ChangeEvent<HTMLInputElement>) => {
@@ -46,11 +93,52 @@ export function AccountLogin() {
         ...currentValues,
         [field]: event.target.value,
       }))
+      setFieldErrors((currentErrors) => {
+        if (!currentErrors[field]) {
+          return currentErrors
+        }
+
+        const nextErrors = { ...currentErrors }
+        delete nextErrors[field]
+
+        return nextErrors
+      })
+      setSubmitErrorMessage(null)
+      setAuthenticatedAccount(null)
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (isAuthenticating) {
+      return
+    }
+
+    const validationErrors = validateLoginForm(formValues)
+
+    setFieldErrors(validationErrors)
+    setSubmitErrorMessage(null)
+    setAuthenticatedAccount(null)
+
+    if (Object.keys(validationErrors).length > 0) {
+      return
+    }
+
+    setIsAuthenticating(true)
+
+    try {
+      const account = await loginAccount(toLoginAccountPayload(formValues))
+
+      setAuthenticatedAccount(account)
+    } catch (error: unknown) {
+      const authAccountError = isAuthAccountServiceError(error) ? error : null
+
+      setSubmitErrorMessage(authAccountError?.message ?? defaultLoginErrorMessage)
+      setFieldErrors({})
+    } finally {
+      setIsAuthenticating(false)
+    }
   }
 
   return (
@@ -76,6 +164,14 @@ export function AccountLogin() {
               </FormDescription>
             </LoginFormHeading>
 
+            {submitErrorMessage && <FormAlert role="alert">{submitErrorMessage}</FormAlert>}
+            {successMessage && (
+              <LoginSuccessAlert role="status">
+                <CheckCircle2 size={16} />
+                {successMessage}
+              </LoginSuccessAlert>
+            )}
+
             <LoginForm onSubmit={handleSubmit} noValidate>
               <FormStack>
                 <Input
@@ -85,6 +181,9 @@ export function AccountLogin() {
                   type="email"
                   value={formValues.email}
                   onChange={handleFieldChange('email')}
+                  disabled={isAuthenticating}
+                  error={!!fieldErrors.email}
+                  helperText={fieldErrors.email}
                 />
 
                 <Input
@@ -94,15 +193,28 @@ export function AccountLogin() {
                   type={isPasswordVisible ? 'text' : 'password'}
                   value={formValues.password}
                   onChange={handleFieldChange('password')}
+                  disabled={isAuthenticating}
+                  error={!!fieldErrors.password}
+                  helperText={fieldErrors.password}
                   endIcon={isPasswordVisible ? 'eye-off' : 'eye'}
                   endIconAriaLabel={isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'}
                   onEndIconClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
                 />
 
-                <LoginPrimaryButton type="submit" size="lg">
-                  <LogIn size={16} />
-                  Entrar
-                  <ArrowRight size={16} />
+                <LoginPrimaryButton
+                  type="submit"
+                  size="lg"
+                  disabled={isAuthenticating}
+                  aria-busy={isAuthenticating}
+                >
+                  {isAuthenticating ? (
+                    <SubmitLoadingIcon>
+                      <LoaderCircle size={16} />
+                    </SubmitLoadingIcon>
+                  ) : (
+                    <LogIn size={16} />
+                  )}
+                  {isAuthenticating ? 'Entrando...' : 'Entrar'}
                 </LoginPrimaryButton>
               </FormStack>
             </LoginForm>

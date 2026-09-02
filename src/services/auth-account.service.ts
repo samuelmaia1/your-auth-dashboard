@@ -1,15 +1,33 @@
 import axios from 'axios'
 
+import { api } from '@lib/api/axios'
+import { apiUrls } from '@lib/api/urls'
+import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 import type { ApiErrorResponse } from '@/types/api-response-types'
 
 const defaultAuthAccountErrorMessage =
   'Não foi possível autenticar a conta. Revise os dados e tente novamente.'
 
+const authAccountErrorMessagesByStatus: Record<number, string> = {
+  400: 'Não foi possível validar os dados de login. Revise os campos e tente novamente.',
+  401: 'E-mail ou senha inválidos. Confira suas credenciais e tente novamente.',
+  500: 'Não foi possível iniciar sua sessão agora. Tente novamente em alguns instantes.',
+}
+
+function getDefaultAuthAccountErrorMessage(status?: number) {
+  if (!status) {
+    return defaultAuthAccountErrorMessage
+  }
+
+  return authAccountErrorMessagesByStatus[status] ?? defaultAuthAccountErrorMessage
+}
+
 export class AuthAccountServiceError extends Error {
   response: ApiErrorResponse
 
   constructor(response: ApiErrorResponse) {
-    const message = response.message || response.error || defaultAuthAccountErrorMessage
+    const message =
+      response.message || response.error || getDefaultAuthAccountErrorMessage(response.status)
 
     super(message)
     this.name = 'AuthAccountServiceError'
@@ -48,7 +66,9 @@ export function normalizeAuthAccountError(error: unknown): ApiErrorResponse {
     }
 
     return {
-      message: error.message || defaultAuthAccountErrorMessage,
+      message: status
+        ? getDefaultAuthAccountErrorMessage(status)
+        : error.message || defaultAuthAccountErrorMessage,
       status,
     }
   }
@@ -61,5 +81,16 @@ export function normalizeAuthAccountError(error: unknown): ApiErrorResponse {
 
   return {
     message: defaultAuthAccountErrorMessage,
+  }
+}
+
+export async function loginAccount(data: LoginAccountRequest) {
+  try {
+    const response = await api.post<AccountResponse, LoginAccountRequest>(apiUrls.auth.login, data)
+    console.log(response)
+    return response
+  } catch (error: unknown) {
+    console.log(error)
+    throw new AuthAccountServiceError(normalizeAuthAccountError(error))
   }
 }

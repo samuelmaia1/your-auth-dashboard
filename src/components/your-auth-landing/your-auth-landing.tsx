@@ -1,5 +1,7 @@
 'use client'
 
+import { useTheme } from '@mui/material/styles'
+
 import {
   ArrowRight,
   Check,
@@ -8,6 +10,7 @@ import {
   LockKeyhole,
   Menu,
   ShieldCheck,
+  TrendingUp,
   X,
   Zap,
 } from 'lucide-react'
@@ -125,6 +128,8 @@ function Logo() {
 
 export function YourAuthLanding() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const theme = useTheme()
+  const palette = theme.palette
 
   return (
     <Main id="inicio">
@@ -173,6 +178,7 @@ export function YourAuthLanding() {
           <Eyebrow>
             <StatusDot />
             Autenticação para produtos que crescem
+            <TrendingUp size={16} color={palette.success.main} />
           </Eyebrow>
 
           <HeroTitle>
@@ -195,11 +201,11 @@ export function YourAuthLanding() {
 
           <HeroFootnotes>
             <HeroFootnote>
-              <Check size={14} />
+              <Check size={14} color={palette.success.main} />
               Sem cartão de crédito
             </HeroFootnote>
             <HeroFootnote>
-              <Check size={14} />
+              <Check size={14} color={palette.success.main} />
               Plano gratuito
             </HeroFootnote>
           </HeroFootnotes>

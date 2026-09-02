@@ -1,4 +1,4 @@
-import { ArrowRight, KeyRound, ShieldCheck, Sparkles, UserPlus } from 'lucide-react'
+import { KeyRound, ShieldCheck, Sparkles } from 'lucide-react'
 
 import { LogoLink } from '@components/account-signup/logo-link'
 
@@ -7,16 +7,12 @@ import {
   AsideDescription,
   AsideEyebrow,
   AsideTitle,
-  AsideSignupLink,
   LoginAside as StyledLoginAside,
   LoginResourceIcon,
   LoginResourceItem,
   LoginResourceList,
   LoginResourceText,
   LoginResourceTitle,
-  SignupPanel,
-  SignupPanelDescription,
-  SignupPanelTitle,
 } from './style'
 
 const loginResources = [
@@ -61,20 +57,6 @@ export function LoginAside() {
           ))}
         </LoginResourceList>
       </AsideCopy>
-
-      <SignupPanel>
-        <div>
-          <SignupPanelTitle>Ainda não tem conta?</SignupPanelTitle>
-          <SignupPanelDescription>
-            Crie seu acesso inicial e configure a base da sua conta proprietária.
-          </SignupPanelDescription>
-        </div>
-        <AsideSignupLink href="/cadastro">
-          <UserPlus size={16} />
-          Fazer cadastro
-          <ArrowRight size={16} />
-        </AsideSignupLink>
-      </SignupPanel>
     </StyledLoginAside>
   )
 }

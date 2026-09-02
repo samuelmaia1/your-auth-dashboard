@@ -10,6 +10,7 @@ import {
   FormCard,
   FormContent,
   FormDescription,
+  FormAlert,
   FormHeading,
   FormSection,
   FormStack,
@@ -19,6 +20,7 @@ import {
   MobileHeader,
   PageRoot,
   SignupAside,
+  SubmitLoadingIcon,
 } from '@components/account-signup/style'
 
 export {
@@ -27,6 +29,7 @@ export {
   AsideEyebrow,
   AsideTitle,
   BackLink,
+  FormAlert,
   FormCard,
   FormContent,
   FormDescription,
@@ -36,9 +39,15 @@ export {
   FormTitle,
   MobileHeader,
   PageRoot,
+  SubmitLoadingIcon,
 }
 
-export const LoginAside = styled(SignupAside)({})
+export const LoginAside = styled(SignupAside)(({ theme }) => ({
+  [theme.breakpoints.up('lg')]: {
+    justifyContent: 'flex-start',
+    gap: 'clamp(96px, 18vh, 168px)',
+  },
+}))
 
 export const LoginResourceList = styled('div')({
   marginTop: 28,
@@ -149,6 +158,32 @@ export const AsideSignupLink = styled(NextLink)(({ theme }) => {
 
 export const LoginFormHeading = styled(FormHeading)({
   marginTop: 0,
+})
+
+export const LoginSuccessAlert = styled('p')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    marginTop: 20,
+    padding: '10px 12px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 8,
+    border: `1px solid ${theme.alpha(palette.success.main, 0.24)}`,
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: theme.alpha(palette.success.main, 0.1),
+    color: palette.success.main,
+    fontSize: 13,
+    fontWeight: 500,
+    lineHeight: '20px',
+
+    '& svg': {
+      width: 16,
+      height: 16,
+      flexShrink: 0,
+      marginTop: 2,
+    },
+  }
 })
 
 export const LoginForm = styled('form')({
