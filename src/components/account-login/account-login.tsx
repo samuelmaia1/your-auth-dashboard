@@ -5,7 +5,8 @@ import { useState, type ChangeEvent, type FormEvent } from 'react'
 
 import { Input } from '@components/ui/input/input'
 import { LogoLink } from '@components/account-signup/logo-link'
-import { isAuthAccountServiceError, loginAccount } from '@/services/auth-account.service'
+import { useAuth } from '@/hooks/use-auth'
+import { isAuthAccountServiceError } from '@/services/auth-account.service'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 
 import { LoginAside } from './login-aside'
@@ -72,6 +73,7 @@ function toLoginAccountPayload(data: LoginFormValues): LoginAccountRequest {
 }
 
 export function AccountLogin() {
+  const { login } = useAuth()
   const [formValues, setFormValues] = useState(initialLoginFormValues)
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
@@ -128,7 +130,7 @@ export function AccountLogin() {
     setIsAuthenticating(true)
 
     try {
-      const account = await loginAccount(toLoginAccountPayload(formValues))
+      const account = await login(toLoginAccountPayload(formValues))
 
       setAuthenticatedAccount(account)
     } catch (error: unknown) {

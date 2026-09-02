@@ -59,7 +59,19 @@ const refreshSession = () => {
   return refreshRequest
 }
 
-const isRefreshRequest = (url?: string) => url?.includes(apiUrls.auth.refresh) ?? false
+const nonRefreshableUrls = [
+  apiUrls.auth.login,
+  apiUrls.auth.refresh,
+  apiUrls.auth.mobileLogin,
+  apiUrls.auth.mobileRefresh,
+  apiUrls.users.login,
+  apiUrls.users.logout,
+  apiUrls.users.refresh,
+]
+
+const isNonRefreshableRequest = (url?: string) =>
+  url ? nonRefreshableUrls.some((nonRefreshableUrl) => url.includes(nonRefreshableUrl)) : false
+const shouldRefreshSession = (status?: number) => status === 401 || status === 403
 
 axiosClient.interceptors.response.use(
   (response) => response,
@@ -67,10 +79,10 @@ axiosClient.interceptors.response.use(
     const originalRequest = error.config as RetriableRequestConfig | undefined
 
     if (
-      error.response?.status !== 403 ||
+      !shouldRefreshSession(error.response?.status) ||
       !originalRequest ||
       originalRequest._retry ||
-      isRefreshRequest(originalRequest.url)
+      isNonRefreshableRequest(originalRequest.url)
     ) {
       return Promise.reject(error)
     }
