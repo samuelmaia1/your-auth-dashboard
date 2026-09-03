@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
 import { AppThemeProvider } from '@components/theme-provider/theme-provider'
+import { AuthProvider } from '@/contexts/auth-context'
 
 export const metadata: Metadata = {
   title: 'Your Auth — Identidade, sem complicação',
@@ -42,7 +43,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <AppThemeProvider>
-          {children}
+          <AuthProvider>{children}</AuthProvider>
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </AppThemeProvider>
       </body>

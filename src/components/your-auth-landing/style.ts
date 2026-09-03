@@ -211,7 +211,7 @@ export const StatusDot = styled('span')(({ theme }) => ({
   width: 6,
   height: 6,
   borderRadius: '50%',
-  backgroundColor: (theme.vars || theme).palette.accent.main,
+  backgroundColor: (theme.vars || theme).palette.success.main,
 }))
 
 export const HeroTitle = styled('h1')(({ theme }) => ({
@@ -443,7 +443,7 @@ export const BenefitsHeading = styled('div')(({ theme }) => ({
 }))
 
 export const SectionEyebrow = styled('p')(({ theme }) => ({
-  color: (theme.vars || theme).palette.accent.main,
+  color: (theme.vars || theme).palette.text.secondary,
   fontFamily: monoFontFamily,
   fontSize: 12,
   lineHeight: '16px',
@@ -538,7 +538,7 @@ export const CapabilityItem = styled('div')(({ theme }) => ({
 }))
 
 export const CapabilityNumber = styled('span')(({ theme }) => ({
-  color: (theme.vars || theme).palette.accent.main,
+  color: (theme.vars || theme).palette.text.secondary,
   fontFamily: monoFontFamily,
   fontSize: 12,
   lineHeight: '16px',

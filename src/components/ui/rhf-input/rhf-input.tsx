@@ -14,6 +14,7 @@ interface RHFInputProps<TFieldValues extends FieldValues = FieldValues> {
   secure?: boolean
   disabled?: boolean
   endIcon?: IconName
+  endIconAriaLabel?: string
   onEndIconClick?: () => void
   onValueChange?: (value: string) => void
   onBlur?: (value: string) => void | Promise<void>
@@ -28,6 +29,7 @@ export function RHFInput<TFieldValues extends FieldValues = FieldValues>({
   secure,
   disabled,
   endIcon,
+  endIconAriaLabel,
   onEndIconClick,
   onValueChange,
   onBlur,
@@ -51,6 +53,7 @@ export function RHFInput<TFieldValues extends FieldValues = FieldValues>({
               secure={secure}
               disabled={disabled}
               endIcon={endIcon}
+              endIconAriaLabel={endIconAriaLabel}
               onEndIconClick={onEndIconClick}
               onBlur={async (e) => {
                 field.onBlur()

@@ -673,6 +673,65 @@ export const FormAlert = styled('p')(({ theme }) => {
   }
 })
 
+export const FormSwitchFooter = styled('footer')(({ theme }) => ({
+  marginTop: 24,
+  paddingTop: 20,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 10,
+  borderTop: `1px solid ${(theme.vars || theme).palette.divider}`,
+
+  [theme.breakpoints.up('sm')]: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+}))
+
+export const FormSwitchText = styled('p')(({ theme }) => ({
+  color: (theme.vars || theme).palette.text.secondary,
+  fontSize: 14,
+  lineHeight: '20px',
+}))
+
+export const FormSwitchLink = styled(NextLink)(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    minHeight: 36,
+    padding: '0 10px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    border: `1px solid ${palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: palette.background.default,
+    color: palette.text.primary,
+    fontSize: 14,
+    fontWeight: 500,
+    lineHeight: '20px',
+    transition: 'background-color 150ms ease, border-color 150ms ease, color 150ms ease',
+
+    '& svg': {
+      width: 16,
+      height: 16,
+      flexShrink: 0,
+    },
+
+    '&:hover': {
+      backgroundColor: palette.muted.main,
+    },
+
+    '&:focus-visible': {
+      outline: 'none',
+      borderColor: palette.ring,
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}`,
+    },
+  }
+})
+
 export const SuccessModalMessage = styled('p')(({ theme }) => ({
   color: (theme.vars || theme).palette.text.secondary,
   fontSize: 14,

@@ -5,6 +5,8 @@ const pathParam = (value: string | number) => encodeURIComponent(String(value))
 export const apiUrls = {
   accounts: {
     create: '/accounts/create',
+    me: '/accounts/me',
+    summary: '/accounts/me/summary',
   },
   auth: {
     login: '/auth/login',
@@ -27,6 +29,10 @@ export const apiUrls = {
         `/projects/${pathParam(projectId)}/api-keys/${pathParam(apiKeyId)}` as BackendUrl,
       revoke: (projectId: string | number, apiKeyId: string | number) =>
         `/projects/${pathParam(projectId)}/api-keys/${pathParam(apiKeyId)}/revoke` as BackendUrl,
+    },
+    sessions: {
+      list: (projectId: string | number) =>
+        `/projects/${pathParam(projectId)}/sessions` as BackendUrl,
     },
     users: {
       list: (projectId: string | number) => `/projects/${pathParam(projectId)}/users` as BackendUrl,

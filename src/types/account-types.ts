@@ -22,6 +22,12 @@ export interface CreateAccountRequest {
   phone: PhoneDTO
 }
 
+export interface LoginAccountRequest {
+  password: string
+  email?: string
+  cpf?: string
+}
+
 export interface AccountResponse {
   id?: string
   name?: string
@@ -32,4 +38,32 @@ export interface AccountResponse {
   address?: AddressDTO
   phone?: PhoneDTO
   CPF?: string
+}
+
+export type ProjectStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+
+export type ProjectEnvironment = 'DEVELOPMENT' | 'PRODUCTION'
+
+export type AccountProjectRole = 'OWNER' | 'ADMIN' | 'DEVELOPER' | 'VIEWER'
+
+export interface AccountProjectSummaryResponse {
+  id?: string
+  name?: string
+  description?: string
+  ownerAccountId?: string
+  status?: ProjectStatus
+  environment?: ProjectEnvironment
+  tokenAudience?: string
+  createdAt?: string
+  updatedAt?: string
+  role?: AccountProjectRole
+  totalUsers?: number
+  totalActiveSessions?: number
+}
+
+export interface AccountSummaryResponse {
+  totalProjects?: number
+  totalUsers?: number
+  totalActiveSessions?: number
+  projects?: AccountProjectSummaryResponse[]
 }

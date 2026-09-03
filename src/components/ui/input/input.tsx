@@ -17,6 +17,7 @@ interface InputProps {
   name?: string
   secure?: boolean
   endIcon?: IconName
+  endIconAriaLabel?: string
   onEndIconClick?: () => void
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
 }
@@ -33,6 +34,7 @@ export function Input({
   disabled = false,
   name,
   endIcon,
+  endIconAriaLabel,
   onEndIconClick,
   secure = false,
 }: InputProps) {
@@ -55,7 +57,12 @@ export function Input({
         input: {
           endAdornment: endIcon ? (
             <InputAdornment position="end">
-              <IconButton onClick={onEndIconClick} edge="end" disabled={disabled}>
+              <IconButton
+                aria-label={endIconAriaLabel}
+                onClick={onEndIconClick}
+                edge="end"
+                disabled={disabled}
+              >
                 <Icon name={endIcon} size={16} />
               </IconButton>
             </InputAdornment>

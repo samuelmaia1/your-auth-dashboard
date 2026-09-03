@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, LogIn } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 
@@ -33,6 +33,9 @@ import {
   FormHeading,
   FormSection,
   FormStepMeta,
+  FormSwitchFooter,
+  FormSwitchLink,
+  FormSwitchText,
   FormTitle,
   MobileHeader,
   PageRoot,
@@ -217,7 +220,7 @@ export function AccountSignup() {
             <LogoLink />
             <BackLink href="/">
               <ArrowLeft size={16} />
-              Landing
+              Tela inicial
             </BackLink>
           </MobileHeader>
 
@@ -250,6 +253,14 @@ export function AccountSignup() {
                 setCurrentStep={setCurrentStep}
                 steps={formSteps}
               />
+
+              <FormSwitchFooter>
+                <FormSwitchText>Já tem uma conta?</FormSwitchText>
+                <FormSwitchLink href="/login">
+                  <LogIn size={16} />
+                  Fazer login
+                </FormSwitchLink>
+              </FormSwitchFooter>
             </FormCard>
           )}
         </FormContent>
@@ -263,11 +274,10 @@ export function AccountSignup() {
         icon={<CheckCircle2 size={24} />}
       >
         <SuccessModalMessage>
-          Sua conta Your Auth foi criada. Quando a tela de login estiver disponível, você poderá
-          seguir por aqui.
+          Sua conta Your Auth foi criada. Você já pode seguir para a tela de login.
         </SuccessModalMessage>
         <SuccessModalActions>
-          <SuccessModalButton type="button" size="lg">
+          <SuccessModalButton href="/login" size="lg">
             Ir para login
           </SuccessModalButton>
         </SuccessModalActions>
