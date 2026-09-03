@@ -55,7 +55,7 @@ const mainNavigation: NavigationItem[] = [
   },
   {
     label: 'Projetos',
-    href: '/home/projetos',
+    href: '/projetos',
     icon: Folder,
   },
   {

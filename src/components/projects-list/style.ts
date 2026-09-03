@@ -1,4 +1,5 @@
-import { styled } from '@mui/material/styles'
+import { styled, type Theme } from '@mui/material/styles'
+import NextLink from 'next/link'
 
 import { Button } from '@components/ui/button/button'
 
@@ -11,7 +12,7 @@ type ProjectBadgeProps = {
   $tone: 'success' | 'danger' | 'neutral' | 'info'
 }
 
-export const HomeRoot = styled('main')({
+export const ProjectsRoot = styled('main')({
   width: '100%',
   maxWidth: 1180,
   margin: '0 auto',
@@ -19,12 +20,15 @@ export const HomeRoot = styled('main')({
   gap: 28,
 })
 
-export const HomeHeader = styled('header')({
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: 20,
-})
+export const ProjectsHeader = styled('header')(({ theme }) => ({
+  display: 'grid',
+  gap: 16,
+
+  [theme.breakpoints.up('sm')]: {
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    alignItems: 'flex-start',
+  },
+}))
 
 export const HeaderContent = styled('div')({
   minWidth: 0,
@@ -46,7 +50,7 @@ export const HeaderTitle = styled('h1')(({ theme }) => ({
   lineHeight: 1.18,
 
   [theme.breakpoints.up('md')]: {
-    fontSize: 28,
+    fontSize: 40,
   },
 }))
 
@@ -58,64 +62,16 @@ export const HeaderSubtitle = styled('p')(({ theme }) => ({
   lineHeight: '24px',
 }))
 
-export const MetricsGrid = styled('section')(({ theme }) => ({
-  display: 'grid',
-  gap: 12,
+export const NewProjectButton = styled(Button)(({ theme }) => ({
+  gap: 8,
+  justifySelf: 'start',
 
   [theme.breakpoints.up('sm')]: {
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    justifySelf: 'end',
   },
 }))
 
-export const MetricCard = styled('article')(({ theme }) => {
-  const palette = (theme.vars || theme).palette
-
-  return {
-    minHeight: 132,
-    padding: 18,
-    display: 'grid',
-    alignContent: 'space-between',
-    gap: 12,
-    border: `1px solid ${palette.divider}`,
-    borderRadius: 8,
-    backgroundColor: palette.background.paper,
-    boxShadow: `0 18px 36px ${theme.alpha(palette.primary.main, 0.06)}`,
-  }
-})
-
-export const MetricIcon = styled('span')(({ theme }) => {
-  const palette = (theme.vars || theme).palette
-
-  return {
-    width: 36,
-    height: 36,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: theme.alpha(palette.accent.main, 0.14),
-    color: palette.success.main,
-  }
-})
-
-export const MetricLabel = styled('p')(({ theme }) => ({
-  color: (theme.vars || theme).palette.text.secondary,
-  fontSize: 13,
-  fontWeight: 600,
-  lineHeight: '18px',
-}))
-
-export const MetricValue = styled('p')(({ theme }) => ({
-  minHeight: 40,
-  display: 'flex',
-  alignItems: 'center',
-  color: (theme.vars || theme).palette.text.primary,
-  fontSize: 34,
-  fontWeight: 700,
-  lineHeight: '40px',
-}))
-
-export const ProjectsHeader = styled('div')({
+export const SectionHeader = styled('div')({
   marginBottom: 12,
   display: 'flex',
   alignItems: 'center',
@@ -130,12 +86,12 @@ export const SectionTitle = styled('h2')(({ theme }) => ({
   lineHeight: '24px',
 }))
 
-export const ProjectList = styled('div')({
+export const ProjectListGrid = styled('div')({
   display: 'grid',
   gap: 10,
 })
 
-export const ProjectCard = styled('article')(({ theme }) => {
+const projectCardBaseStyles = (theme: Theme) => {
   const palette = (theme.vars || theme).palette
 
   return {
@@ -148,8 +104,31 @@ export const ProjectCard = styled('article')(({ theme }) => {
     backgroundColor: palette.background.paper,
 
     [theme.breakpoints.up('lg')]: {
-      gridTemplateColumns: 'minmax(0, 1.15fr) minmax(260px, 0.9fr) minmax(176px, auto)',
+      gridTemplateColumns: 'minmax(0, 1.15fr) minmax(230px, 0.8fr) minmax(210px, auto)',
       alignItems: 'center',
+    },
+  }
+}
+
+export const ProjectCard = styled('article')(({ theme }) => projectCardBaseStyles(theme))
+
+export const ProjectCardLink = styled(NextLink)(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    ...projectCardBaseStyles(theme),
+    transition: 'border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease',
+
+    '&:hover': {
+      borderColor: theme.alpha(palette.accent.main, 0.42),
+      boxShadow: `0 16px 34px ${theme.alpha(palette.primary.main, 0.08)}`,
+      transform: 'translateY(-1px)',
+    },
+
+    '&:focus-visible': {
+      outline: 'none',
+      borderColor: palette.ring,
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}`,
     },
   }
 })
@@ -228,43 +207,89 @@ export const ProjectBadge = styled('span', {
   }
 })
 
-export const ProjectStats = styled('div')(({ theme }) => ({
+export const ProjectMetadata = styled('dl')(({ theme }) => ({
+  minWidth: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: 8,
 
   [theme.breakpoints.up('lg')]: {
-    minWidth: 176,
+    minWidth: 210,
   },
 }))
 
-export const ProjectStat = styled('div')(({ theme }) => {
-  return {
-    minHeight: 58,
-    padding: '4px 0',
-    display: 'grid',
-    alignContent: 'center',
-    gap: 2,
+export const ProjectMetadataItem = styled('div')(({ theme }) => ({
+  minHeight: 58,
+  padding: '4px 0',
+  display: 'grid',
+  alignContent: 'center',
+  gap: 2,
 
-    [theme.breakpoints.up('lg')]: {
-      justifyItems: 'end',
-      textAlign: 'right',
-    },
-  }
-})
-
-export const ProjectStatValue = styled('p')(({ theme }) => ({
-  color: (theme.vars || theme).palette.text.primary,
-  fontSize: 18,
-  fontWeight: 700,
-  lineHeight: '24px',
+  [theme.breakpoints.up('lg')]: {
+    justifyItems: 'end',
+    textAlign: 'right',
+  },
 }))
 
-export const ProjectStatLabel = styled('p')(({ theme }) => ({
+export const ProjectMetadataLabel = styled('dt')(({ theme }) => ({
   color: (theme.vars || theme).palette.text.secondary,
   fontSize: 12,
   fontWeight: 600,
   lineHeight: '16px',
+}))
+
+export const ProjectMetadataValue = styled('dd')(({ theme }) => ({
+  margin: 0,
+  overflow: 'hidden',
+  color: (theme.vars || theme).palette.text.primary,
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: '20px',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}))
+
+export const PaginationBar = styled('div')(({ theme }) => ({
+  marginTop: 16,
+  display: 'grid',
+  gap: 12,
+
+  [theme.breakpoints.up('sm')]: {
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    alignItems: 'center',
+  },
+}))
+
+export const PaginationSummary = styled('p')(({ theme }) => ({
+  color: (theme.vars || theme).palette.text.secondary,
+  fontSize: 13,
+  fontWeight: 600,
+  lineHeight: '20px',
+}))
+
+export const PaginationActions = styled('div')({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 8,
+})
+
+export const PaginationButton = styled(Button)({
+  gap: 6,
+})
+
+export const PageIndicator = styled('span')(({ theme }) => ({
+  minHeight: 28,
+  padding: '0 10px',
+  display: 'inline-flex',
+  alignItems: 'center',
+  border: `1px solid ${(theme.vars || theme).palette.divider}`,
+  borderRadius: 8,
+  color: (theme.vars || theme).palette.text.secondary,
+  fontSize: 12,
+  fontWeight: 700,
+  lineHeight: '16px',
+  whiteSpace: 'nowrap',
 }))
 
 export const ErrorMessage = styled('div')(({ theme }) => {
@@ -317,9 +342,9 @@ export const LoadingBlock = styled('span', {
   display: 'inline-flex',
   borderRadius: 999,
   backgroundColor: theme.alpha((theme.vars || theme).palette.primary.main, 0.1),
-  animation: 'home-dashboard-loading 1.1s ease-in-out infinite',
+  animation: 'projects-list-loading 1.1s ease-in-out infinite',
 
-  '@keyframes home-dashboard-loading': {
+  '@keyframes projects-list-loading': {
     '0%, 100%': {
       opacity: 0.48,
     },

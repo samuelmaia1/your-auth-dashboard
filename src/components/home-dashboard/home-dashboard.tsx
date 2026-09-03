@@ -73,7 +73,7 @@ const accountProjectRoleLabels: Record<AccountProjectRole, string> = {
 
 const badgeToneByStatus: Record<ProjectStatus, BadgeTone> = {
   ACTIVE: 'success',
-  INACTIVE: 'neutral',
+  INACTIVE: 'danger',
   SUSPENDED: 'danger',
 }
 

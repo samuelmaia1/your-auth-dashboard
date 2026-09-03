@@ -30,6 +30,10 @@ export const apiUrls = {
       revoke: (projectId: string | number, apiKeyId: string | number) =>
         `/projects/${pathParam(projectId)}/api-keys/${pathParam(apiKeyId)}/revoke` as BackendUrl,
     },
+    sessions: {
+      list: (projectId: string | number) =>
+        `/projects/${pathParam(projectId)}/sessions` as BackendUrl,
+    },
     users: {
       list: (projectId: string | number) => `/projects/${pathParam(projectId)}/users` as BackendUrl,
       byId: (projectId: string | number, userId: string | number) =>

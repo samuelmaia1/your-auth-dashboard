@@ -34,10 +34,13 @@ type AuthProviderProps = {
 }
 
 const privateEntryPath = '/home'
+const privatePaths = [privateEntryPath, '/projetos']
 const publicPaths = new Set(['/', '/login', '/cadastro'])
 
 const isPrivatePath = (pathname: string) =>
-  pathname === privateEntryPath || pathname.startsWith(`${privateEntryPath}/`)
+  privatePaths.some(
+    (privatePath) => pathname === privatePath || pathname.startsWith(`${privatePath}/`),
+  )
 
 const isPublicPath = (pathname: string) => publicPaths.has(pathname)
 
