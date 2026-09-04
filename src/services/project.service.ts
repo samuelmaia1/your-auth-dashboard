@@ -4,6 +4,9 @@ import { api } from '@lib/api/axios'
 import { apiUrls } from '@lib/api/urls'
 import type { ApiErrorResponse } from '@/types/api-response-types'
 import type {
+  CreateProjectApiKeyRequest,
+  CreateProjectRequest,
+  CreatedProjectApiKeyResponse,
   ProjectApiKeysPageResponse,
   ProjectAuthConfigResponse,
   ProjectPasswordConfigResponse,
@@ -38,6 +41,10 @@ const defaultProjectAuthConfigErrorMessage =
   'Não foi possível carregar a política de autenticação. Tente novamente em alguns instantes.'
 const defaultProjectApiKeysErrorMessage =
   'Não foi possível carregar as API keys do projeto. Tente novamente em alguns instantes.'
+const defaultCreateProjectErrorMessage =
+  'Não foi possível criar o projeto. Revise os dados e tente novamente.'
+const defaultCreateProjectApiKeyErrorMessage =
+  'Não foi possível gerar a API key do projeto. Revise os dados e tente novamente.'
 
 export class ProjectsServiceError extends Error {
   response: ApiErrorResponse
@@ -117,6 +124,17 @@ export async function getProjects({ page, size }: GetProjectsParams) {
   }
 }
 
+export async function createProject(data: CreateProjectRequest) {
+  try {
+    return await api.post<ProjectResponse, CreateProjectRequest>(apiUrls.projects.create, data)
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultCreateProjectErrorMessage),
+      defaultCreateProjectErrorMessage,
+    )
+  }
+}
+
 export async function getProjectById(projectId: string) {
   try {
     return await api.get<ProjectResponse>(apiUrls.projects.byId(projectId))
@@ -124,6 +142,26 @@ export async function getProjectById(projectId: string) {
     throw new ProjectsServiceError(
       normalizeProjectsError(error, defaultProjectDetailsErrorMessage),
       defaultProjectDetailsErrorMessage,
+    )
+  }
+}
+
+export async function createProjectApiKey({
+  data,
+  projectId,
+}: {
+  data: CreateProjectApiKeyRequest
+  projectId: string
+}) {
+  try {
+    return await api.post<CreatedProjectApiKeyResponse, CreateProjectApiKeyRequest>(
+      apiUrls.projects.apiKeys.list(projectId),
+      data,
+    )
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultCreateProjectApiKeyErrorMessage),
+      defaultCreateProjectApiKeyErrorMessage,
     )
   }
 }
