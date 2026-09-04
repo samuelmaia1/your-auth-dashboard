@@ -324,6 +324,105 @@ export const SectionSubtitle = styled('p')(({ theme }) => ({
   lineHeight: '20px',
 }))
 
+export const FiltersGrid = styled('div')(({ theme }) => ({
+  display: 'grid',
+  gap: 10,
+
+  [theme.breakpoints.up('sm')]: {
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  },
+
+  [theme.breakpoints.up('lg')]: {
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  },
+}))
+
+export const FilterField = styled('label')({
+  minWidth: 0,
+  display: 'grid',
+  gap: 6,
+})
+
+export const FilterLabel = styled('span')(({ theme }) => ({
+  color: (theme.vars || theme).palette.text.primary,
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: '18px',
+}))
+
+export const FilterInput = styled('input')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: '100%',
+    minHeight: 44,
+    padding: '0 12px',
+    border: `1px solid ${palette.input}`,
+    borderRadius: 8,
+    backgroundColor: palette.background.paper,
+    boxShadow: '0 1px 2px rgb(15 23 42 / 0.04)',
+    color: palette.text.primary,
+    colorScheme: theme.palette.mode,
+    fontSize: 14,
+    lineHeight: '20px',
+    outline: 'none',
+    transition:
+      'border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease',
+
+    '&::placeholder': {
+      color: palette.text.secondary,
+      opacity: 1,
+    },
+
+    '&:hover': {
+      borderColor: palette.divider,
+      backgroundColor: palette.background.default,
+    },
+
+    '&:focus': {
+      borderColor: palette.ring,
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}, 0 1px 2px rgb(15 23 42 / 0.04)`,
+    },
+
+    '&::-webkit-calendar-picker-indicator': {
+      cursor: 'pointer',
+      opacity: 0.72,
+    },
+  }
+})
+
+export const FilterSelect = styled('select')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: '100%',
+    minHeight: 44,
+    padding: '0 12px',
+    border: `1px solid ${palette.input}`,
+    borderRadius: 8,
+    backgroundColor: palette.background.paper,
+    boxShadow: '0 1px 2px rgb(15 23 42 / 0.04)',
+    color: palette.text.primary,
+    colorScheme: theme.palette.mode,
+    cursor: 'pointer',
+    fontSize: 14,
+    lineHeight: '20px',
+    outline: 'none',
+    transition:
+      'border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease',
+
+    '&:hover': {
+      borderColor: palette.divider,
+      backgroundColor: palette.background.default,
+    },
+
+    '&:focus': {
+      borderColor: palette.ring,
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}, 0 1px 2px rgb(15 23 42 / 0.04)`,
+    },
+  }
+})
+
 export const DataList = styled('div')({
   display: 'grid',
   gap: 10,

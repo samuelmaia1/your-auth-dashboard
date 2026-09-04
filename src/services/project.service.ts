@@ -14,6 +14,7 @@ import type {
   ProjectResponse,
   ProjectUsersPageResponse,
   ProjectUserSessionsPageResponse,
+  ProjectUserSessionStatus,
 } from '@/types/project-types'
 
 type GetProjectsParams = {
@@ -25,6 +26,21 @@ type GetProjectPageResourceParams = {
   projectId: string
   page: number
   size: number
+}
+
+type GetProjectSessionsParams = GetProjectPageResourceParams & {
+  lastUsedAtFrom?: string
+  lastUsedAtTo?: string
+  status?: ProjectUserSessionStatus
+  userEmail?: string
+}
+
+type GetProjectUsersParams = GetProjectPageResourceParams & {
+  email?: string
+}
+
+type GetProjectApiKeysParams = GetProjectPageResourceParams & {
+  createdBy?: string
 }
 
 const defaultProjectsErrorMessage =
@@ -166,14 +182,26 @@ export async function createProjectApiKey({
   }
 }
 
-export async function getProjectSessions({ projectId, page, size }: GetProjectPageResourceParams) {
+export async function getProjectSessions({
+  lastUsedAtFrom,
+  lastUsedAtTo,
+  page,
+  projectId,
+  size,
+  status,
+  userEmail,
+}: GetProjectSessionsParams) {
   try {
     return await api.get<ProjectUserSessionsPageResponse>(
       apiUrls.projects.sessions.list(projectId),
       {
         params: {
+          lastUsedAtFrom,
+          lastUsedAtTo,
           page,
           size,
+          status,
+          userEmail,
         },
       },
     )
@@ -185,10 +213,11 @@ export async function getProjectSessions({ projectId, page, size }: GetProjectPa
   }
 }
 
-export async function getProjectUsers({ projectId, page, size }: GetProjectPageResourceParams) {
+export async function getProjectUsers({ email, page, projectId, size }: GetProjectUsersParams) {
   try {
     return await api.get<ProjectUsersPageResponse>(apiUrls.projects.users.list(projectId), {
       params: {
+        email,
         page,
         size,
       },
@@ -223,10 +252,16 @@ export async function getProjectAuthConfig(projectId: string) {
   }
 }
 
-export async function getProjectApiKeys({ projectId, page, size }: GetProjectPageResourceParams) {
+export async function getProjectApiKeys({
+  createdBy,
+  page,
+  projectId,
+  size,
+}: GetProjectApiKeysParams) {
   try {
     return await api.get<ProjectApiKeysPageResponse>(apiUrls.projects.apiKeys.list(projectId), {
       params: {
+        createdBy,
         page,
         size,
       },
