@@ -2,6 +2,7 @@ import type { ProjectDetailsTab } from './project-details.shared'
 import {
   ProjectApiKeysTab,
   ProjectAuthPolicyTab,
+  ProjectMembersTab,
   ProjectPasswordPolicyTab,
   ProjectSessionsTab,
   ProjectUsersTab,
@@ -22,6 +23,7 @@ export function ProjectDetailsTabContent({ activeTab, projectId }: ProjectDetail
     >
       <ProjectSessionsTab isActive={activeTab === 'sessions'} projectId={projectId} />
       <ProjectUsersTab isActive={activeTab === 'users'} projectId={projectId} />
+      <ProjectMembersTab isActive={activeTab === 'members'} projectId={projectId} />
       <ProjectPasswordPolicyTab isActive={activeTab === 'password-policy'} projectId={projectId} />
       <ProjectAuthPolicyTab isActive={activeTab === 'auth-policy'} projectId={projectId} />
       <ProjectApiKeysTab isActive={activeTab === 'api-keys'} projectId={projectId} />

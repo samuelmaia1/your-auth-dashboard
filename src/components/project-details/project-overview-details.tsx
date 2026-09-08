@@ -23,14 +23,9 @@ import {
 type ProjectOverviewDetailsProps = {
   isLoading: boolean
   project: ProjectResponse | null
-  projectId: string
 }
 
-export function ProjectOverviewDetails({
-  isLoading,
-  project,
-  projectId,
-}: ProjectOverviewDetailsProps) {
+export function ProjectOverviewDetails({ isLoading, project }: ProjectOverviewDetailsProps) {
   if (isLoading && !project) {
     return <LoadingOverview />
   }
@@ -50,12 +45,8 @@ export function ProjectOverviewDetails({
 
       <DetailsGrid>
         <DetailItem>
-          <DetailLabel>ID</DetailLabel>
-          <DetailValue>{getDisplayText(project?.id ?? projectId)}</DetailValue>
-        </DetailItem>
-        <DetailItem>
-          <DetailLabel>Conta proprietária</DetailLabel>
-          <DetailValue>{getDisplayText(project?.ownerAccountId)}</DetailValue>
+          <DetailLabel>Nome</DetailLabel>
+          <DetailValue>{project?.name?.trim() || 'Projeto sem nome'}</DetailValue>
         </DetailItem>
         <DetailItem>
           <DetailLabel>Audiência do token</DetailLabel>
@@ -76,10 +67,6 @@ export function ProjectOverviewDetails({
         <DetailItem>
           <DetailLabel>Atualizado em</DetailLabel>
           <DetailValue>{formatDateTime(project?.updatedAt)}</DetailValue>
-        </DetailItem>
-        <DetailItem>
-          <DetailLabel>Nome</DetailLabel>
-          <DetailValue>{project?.name?.trim() || 'Projeto sem nome'}</DetailValue>
         </DetailItem>
       </DetailsGrid>
     </ProjectOverview>

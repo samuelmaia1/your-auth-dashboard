@@ -1,4 +1,9 @@
-import type { PhoneDTO, ProjectEnvironment, ProjectStatus } from '@/types/account-types'
+import type {
+  AccountProjectRole,
+  PhoneDTO,
+  ProjectEnvironment,
+  ProjectStatus,
+} from '@/types/account-types'
 import type { ApiPageResponse } from '@/types/api-response-types'
 
 export interface ProjectResponse {
@@ -66,6 +71,15 @@ export interface ProjectUserResponse {
 }
 
 export type ProjectUsersPageResponse = ApiPageResponse<ProjectUserResponse>
+
+export interface ProjectMemberResponse {
+  name?: string
+  lastName?: string
+  role?: AccountProjectRole
+  joinedAt?: string
+}
+
+export type ProjectMembersPageResponse = ApiPageResponse<ProjectMemberResponse>
 
 export type ProjectUserSessionStatus = 'ACTIVE' | 'INACTIVE'
 

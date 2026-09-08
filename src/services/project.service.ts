@@ -9,6 +9,7 @@ import type {
   CreatedProjectApiKeyResponse,
   ProjectApiKeysPageResponse,
   ProjectAuthConfigResponse,
+  ProjectMembersPageResponse,
   ProjectPasswordConfigResponse,
   ProjectsPageResponse,
   ProjectResponse,
@@ -51,6 +52,8 @@ const defaultProjectSessionsErrorMessage =
   'Não foi possível carregar as sessões do projeto. Tente novamente em alguns instantes.'
 const defaultProjectUsersErrorMessage =
   'Não foi possível carregar os usuários do projeto. Tente novamente em alguns instantes.'
+const defaultProjectMembersErrorMessage =
+  'Não foi possível carregar os membros do projeto. Tente novamente em alguns instantes.'
 const defaultProjectPasswordConfigErrorMessage =
   'Não foi possível carregar a política de senha. Tente novamente em alguns instantes.'
 const defaultProjectAuthConfigErrorMessage =
@@ -226,6 +229,22 @@ export async function getProjectUsers({ email, page, projectId, size }: GetProje
     throw new ProjectsServiceError(
       normalizeProjectsError(error, defaultProjectUsersErrorMessage),
       defaultProjectUsersErrorMessage,
+    )
+  }
+}
+
+export async function getProjectMembers({ page, projectId, size }: GetProjectPageResourceParams) {
+  try {
+    return await api.get<ProjectMembersPageResponse>(apiUrls.projects.members.list(projectId), {
+      params: {
+        page,
+        size,
+      },
+    })
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultProjectMembersErrorMessage),
+      defaultProjectMembersErrorMessage,
     )
   }
 }
