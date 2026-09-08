@@ -310,7 +310,7 @@ export function ProjectsList() {
           </HeaderSubtitle>
         </HeaderContent>
 
-        <NewProjectButton type="button" size="lg">
+        <NewProjectButton href="/projetos/criar" size="lg">
           <Plus size={16} />
           Novo projeto
         </NewProjectButton>

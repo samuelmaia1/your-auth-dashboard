@@ -15,6 +15,37 @@ export interface ProjectResponse {
 
 export type ProjectsPageResponse = ApiPageResponse<ProjectResponse>
 
+export interface ProjectPasswordConfigRequest {
+  minSize: number
+  maxSize: number
+  numberRequired: boolean
+  uppercaseRequired: boolean
+  lowercaseRequired: boolean
+  specialCharRequired: boolean
+}
+
+export interface ProjectAuthConfigRequest {
+  accessTokenExpirationMinutes: number
+  refreshTokenExpirationDays: number
+  sessionMode: ProjectSessionMode
+  maxActiveSessions: number | null
+  refreshTokenRotationEnabled: boolean
+  revokeTokensOnPasswordChange: boolean
+  failedLoginAttemptsLimit: number
+  lockDurationMinutes: number
+  requireEmailVerification: boolean
+  registrationEnabled: boolean
+}
+
+export interface CreateProjectRequest {
+  name: string
+  description?: string
+  environment: ProjectEnvironment
+  tokenAudience: string
+  passwordConfig: ProjectPasswordConfigRequest
+  authConfig: ProjectAuthConfigRequest
+}
+
 export type ProjectUserStatus = 'ACTIVE' | 'DISABLED' | 'BLOCKED'
 
 export interface ProjectUserResponse {
@@ -71,7 +102,7 @@ export interface ProjectAuthConfigResponse {
   accessTokenExpirationMinutes?: number
   refreshTokenExpirationDays?: number
   sessionMode?: ProjectSessionMode
-  maxActiveSessions?: number
+  maxActiveSessions?: number | null
   refreshTokenRotationEnabled?: boolean
   revokeTokensOnPasswordChange?: boolean
   failedLoginAttemptsLimit?: number
@@ -82,6 +113,12 @@ export interface ProjectAuthConfigResponse {
 }
 
 export type ProjectApiKeyScope = 'USERS_READ' | 'USERS_WRITE' | 'AUTH_LOGIN' | 'AUTH_REGISTER'
+
+export interface CreateProjectApiKeyRequest {
+  name: string
+  scopes: ProjectApiKeyScope[]
+  expiresInHours?: number
+}
 
 export interface AccountBasicResponse {
   id?: string
@@ -109,3 +146,8 @@ export interface ProjectApiKeyDetailsResponse {
 }
 
 export type ProjectApiKeysPageResponse = ApiPageResponse<ProjectApiKeyDetailsResponse>
+
+export interface CreatedProjectApiKeyResponse {
+  key?: string
+  apiKey?: ProjectApiKeyDetailsResponse
+}

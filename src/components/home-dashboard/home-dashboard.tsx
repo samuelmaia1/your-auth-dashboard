@@ -33,6 +33,7 @@ import {
   ProjectBadge,
   ProjectBadges,
   ProjectCard,
+  ProjectCardLink,
   ProjectDescription,
   ProjectList,
   ProjectMain,
@@ -120,10 +121,12 @@ async function fetchAccountSummary() {
 }
 
 function ProjectSummaryCard({ project }: { project: AccountProjectSummaryResponse }) {
-  return (
-    <ProjectCard>
+  const href = project.id ? `/projetos/${encodeURIComponent(project.id)}` : null
+  const title = project.name?.trim() || 'Projeto sem nome'
+  const content = (
+    <>
       <ProjectMain>
-        <ProjectTitle>{project.name?.trim() || 'Projeto sem nome'}</ProjectTitle>
+        <ProjectTitle>{title}</ProjectTitle>
         <ProjectDescription>{project.description?.trim() || 'Sem descrição.'}</ProjectDescription>
       </ProjectMain>
 
@@ -145,7 +148,17 @@ function ProjectSummaryCard({ project }: { project: AccountProjectSummaryRespons
           <ProjectStatLabel>Sessões ativas</ProjectStatLabel>
         </ProjectStat>
       </ProjectStats>
-    </ProjectCard>
+    </>
+  )
+
+  if (!href) {
+    return <ProjectCard>{content}</ProjectCard>
+  }
+
+  return (
+    <ProjectCardLink href={href} aria-label={`Abrir projeto ${title}`}>
+      {content}
+    </ProjectCardLink>
   )
 }
 

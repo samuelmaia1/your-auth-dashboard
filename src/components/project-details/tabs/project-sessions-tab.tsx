@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getProjectSessions } from '@/services/project.service'
 import type {
   ProjectUserSessionResponse,
+  ProjectUserSessionStatus,
   ProjectUserSessionsPageResponse,
 } from '@/types/project-types'
 
@@ -12,6 +14,7 @@ import {
   fetchResource,
   formatDateTime,
   formatNumber,
+  getDateFilterBoundary,
   getDisplayText,
   getPageTotal,
   getSessionStatusBadgeTone,
@@ -30,6 +33,11 @@ import {
   DataList,
   EmptyDescription,
   EmptyState,
+  FilterField,
+  FilterInput,
+  FilterLabel,
+  FiltersGrid,
+  FilterSelect,
   RecordCard,
   RecordDescription,
   RecordDetail,
@@ -99,6 +107,11 @@ function SessionRecord({ session }: { session: ProjectUserSessionResponse }) {
 
 export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabProps) {
   const [page, setPage] = useState(0)
+  const [sessionStatus, setSessionStatus] = useState<ProjectUserSessionStatus | ''>('')
+  const [lastUsedAtFromDate, setLastUsedAtFromDate] = useState('')
+  const [lastUsedAtToDate, setLastUsedAtToDate] = useState('')
+  const [sessionUserEmail, setSessionUserEmail] = useState('')
+  const debouncedSessionUserEmail = useDebouncedValue(sessionUserEmail, 200)
   const [sessionsState, setSessionsState] = useState<
     ResourceState<ProjectUserSessionsPageResponse>
   >({
@@ -107,6 +120,10 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
     errorMessage: null,
   })
   const sessionsRequestIdRef = useRef(0)
+  const lastUsedAtFrom = getDateFilterBoundary(lastUsedAtFromDate, 'start')
+  const lastUsedAtTo = getDateFilterBoundary(lastUsedAtToDate, 'end')
+  const sessionUserEmailFilter = debouncedSessionUserEmail.trim()
+  const isSessionUserEmailDebouncing = sessionUserEmail !== debouncedSessionUserEmail
   const sessions = sessionsState.data?.content ?? []
   const totalSessions = getPageTotal(sessionsState.data)
   const hasInitialLoading = sessionsState.isLoading && !sessionsState.data
@@ -125,9 +142,13 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
       const { data, errorMessage } = await fetchResource(
         () =>
           getProjectSessions({
+            lastUsedAtFrom,
+            lastUsedAtTo,
             projectId,
             page: pageToLoad,
             size: projectResourcePageSize,
+            status: sessionStatus || undefined,
+            userEmail: sessionUserEmailFilter || undefined,
           }),
         defaultSessionsErrorMessage,
       )
@@ -140,18 +161,14 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
         })
       }
     },
-    [projectId],
+    [lastUsedAtFrom, lastUsedAtTo, projectId, sessionStatus, sessionUserEmailFilter],
   )
 
   useEffect(() => {
-    if (!isActive) {
-      return
-    }
-
     let shouldLoad = true
 
     queueMicrotask(() => {
-      if (shouldLoad) {
+      if (shouldLoad && isActive && !isSessionUserEmailDebouncing) {
         void loadSessions(page)
       }
     })
@@ -160,7 +177,27 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
       shouldLoad = false
       sessionsRequestIdRef.current += 1
     }
-  }, [isActive, loadSessions, page])
+  }, [isActive, isSessionUserEmailDebouncing, loadSessions, page])
+
+  function updateSessionStatus(value: ProjectUserSessionStatus | '') {
+    setSessionStatus(value)
+    setPage(0)
+  }
+
+  function updateLastUsedAtFromDate(value: string) {
+    setLastUsedAtFromDate(value)
+    setPage(0)
+  }
+
+  function updateLastUsedAtToDate(value: string) {
+    setLastUsedAtToDate(value)
+    setPage(0)
+  }
+
+  function updateSessionUserEmail(value: string) {
+    setSessionUserEmail(value)
+    setPage(0)
+  }
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(currentPage - 1, 0))
@@ -184,6 +221,58 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
           )}
         </div>
       </TabHeader>
+
+      <FiltersGrid>
+        <FilterField>
+          <FilterLabel>Status</FilterLabel>
+          <FilterSelect
+            aria-label="Filtrar sessões por status"
+            value={sessionStatus}
+            onChange={(event) =>
+              updateSessionStatus(event.target.value as ProjectUserSessionStatus | '')
+            }
+          >
+            <option value="">Todas</option>
+            <option value="ACTIVE">Ativas</option>
+            <option value="INACTIVE">Inativas</option>
+          </FilterSelect>
+        </FilterField>
+
+        <FilterField>
+          <FilterLabel>Último uso de</FilterLabel>
+          <FilterInput
+            aria-label="Filtrar sessões com último uso a partir de"
+            max={lastUsedAtToDate || undefined}
+            type="date"
+            value={lastUsedAtFromDate}
+            onChange={(event) => updateLastUsedAtFromDate(event.target.value)}
+          />
+        </FilterField>
+
+        <FilterField>
+          <FilterLabel>Último uso até</FilterLabel>
+          <FilterInput
+            aria-label="Filtrar sessões com último uso até"
+            min={lastUsedAtFromDate || undefined}
+            type="date"
+            value={lastUsedAtToDate}
+            onChange={(event) => updateLastUsedAtToDate(event.target.value)}
+          />
+        </FilterField>
+
+        <FilterField>
+          <FilterLabel>Email do usuário</FilterLabel>
+          <FilterInput
+            aria-label="Buscar sessões pelo email do usuário"
+            autoComplete="off"
+            inputMode="email"
+            placeholder="Buscar por email"
+            type="search"
+            value={sessionUserEmail}
+            onChange={(event) => updateSessionUserEmail(event.target.value)}
+          />
+        </FilterField>
+      </FiltersGrid>
 
       {sessionsState.errorMessage ? (
         <ResourceError

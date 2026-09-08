@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getProjectUsers } from '@/services/project.service'
 import type { ProjectUserResponse, ProjectUsersPageResponse } from '@/types/project-types'
 
@@ -26,6 +27,10 @@ import {
   DataList,
   EmptyDescription,
   EmptyState,
+  FilterField,
+  FilterInput,
+  FilterLabel,
+  FiltersGrid,
   RecordCard,
   RecordDescription,
   RecordDetail,
@@ -93,12 +98,16 @@ function UserRecord({ user }: { user: ProjectUserResponse }) {
 
 export function ProjectUsersTab({ isActive, projectId }: ProjectUsersTabProps) {
   const [page, setPage] = useState(0)
+  const [userEmail, setUserEmail] = useState('')
+  const debouncedUserEmail = useDebouncedValue(userEmail, 200)
   const [usersState, setUsersState] = useState<ResourceState<ProjectUsersPageResponse>>({
     data: null,
     isLoading: true,
     errorMessage: null,
   })
   const usersRequestIdRef = useRef(0)
+  const userEmailFilter = debouncedUserEmail.trim()
+  const isUserEmailDebouncing = userEmail !== debouncedUserEmail
   const users = usersState.data?.content ?? []
   const totalUsers = getPageTotal(usersState.data)
   const hasInitialLoading = usersState.isLoading && !usersState.data
@@ -117,6 +126,7 @@ export function ProjectUsersTab({ isActive, projectId }: ProjectUsersTabProps) {
       const { data, errorMessage } = await fetchResource(
         () =>
           getProjectUsers({
+            email: userEmailFilter || undefined,
             projectId,
             page: pageToLoad,
             size: projectResourcePageSize,
@@ -132,18 +142,14 @@ export function ProjectUsersTab({ isActive, projectId }: ProjectUsersTabProps) {
         })
       }
     },
-    [projectId],
+    [projectId, userEmailFilter],
   )
 
   useEffect(() => {
-    if (!isActive) {
-      return
-    }
-
     let shouldLoad = true
 
     queueMicrotask(() => {
-      if (shouldLoad) {
+      if (shouldLoad && isActive && !isUserEmailDebouncing) {
         void loadUsers(page)
       }
     })
@@ -152,7 +158,12 @@ export function ProjectUsersTab({ isActive, projectId }: ProjectUsersTabProps) {
       shouldLoad = false
       usersRequestIdRef.current += 1
     }
-  }, [isActive, loadUsers, page])
+  }, [isActive, isUserEmailDebouncing, loadUsers, page])
+
+  function updateUserEmail(value: string) {
+    setUserEmail(value)
+    setPage(0)
+  }
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(currentPage - 1, 0))
@@ -176,6 +187,21 @@ export function ProjectUsersTab({ isActive, projectId }: ProjectUsersTabProps) {
           )}
         </div>
       </TabHeader>
+
+      <FiltersGrid>
+        <FilterField>
+          <FilterLabel>Email</FilterLabel>
+          <FilterInput
+            aria-label="Buscar usuários pelo email"
+            autoComplete="off"
+            inputMode="email"
+            placeholder="Buscar por email"
+            type="search"
+            value={userEmail}
+            onChange={(event) => updateUserEmail(event.target.value)}
+          />
+        </FilterField>
+      </FiltersGrid>
 
       {usersState.errorMessage ? (
         <ResourceError

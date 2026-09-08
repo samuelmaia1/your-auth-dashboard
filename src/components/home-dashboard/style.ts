@@ -1,4 +1,5 @@
-import { styled } from '@mui/material/styles'
+import { styled, type Theme } from '@mui/material/styles'
+import NextLink from 'next/link'
 
 import { Button } from '@components/ui/button/button'
 
@@ -135,7 +136,7 @@ export const ProjectList = styled('div')({
   gap: 10,
 })
 
-export const ProjectCard = styled('article')(({ theme }) => {
+const projectCardBaseStyles = (theme: Theme) => {
   const palette = (theme.vars || theme).palette
 
   return {
@@ -150,6 +151,29 @@ export const ProjectCard = styled('article')(({ theme }) => {
     [theme.breakpoints.up('lg')]: {
       gridTemplateColumns: 'minmax(0, 1.15fr) minmax(260px, 0.9fr) minmax(176px, auto)',
       alignItems: 'center',
+    },
+  }
+}
+
+export const ProjectCard = styled('article')(({ theme }) => projectCardBaseStyles(theme))
+
+export const ProjectCardLink = styled(NextLink)(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    ...projectCardBaseStyles(theme),
+    transition: 'border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease',
+
+    '&:hover': {
+      borderColor: theme.alpha(palette.accent.main, 0.42),
+      boxShadow: `0 16px 34px ${theme.alpha(palette.primary.main, 0.08)}`,
+      transform: 'translateY(-1px)',
+    },
+
+    '&:focus-visible': {
+      outline: 'none',
+      borderColor: palette.ring,
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}`,
     },
   }
 })

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getProjectApiKeys } from '@/services/project.service'
 import type {
   ProjectApiKeyDetailsResponse,
@@ -28,6 +29,10 @@ import {
   DataList,
   EmptyDescription,
   EmptyState,
+  FilterField,
+  FilterInput,
+  FilterLabel,
+  FiltersGrid,
   InlineBadgeGroup,
   RecordCard,
   RecordDescription,
@@ -116,12 +121,16 @@ function ApiKeyRecord({ apiKey }: { apiKey: ProjectApiKeyDetailsResponse }) {
 
 export function ProjectApiKeysTab({ isActive, projectId }: ProjectApiKeysTabProps) {
   const [page, setPage] = useState(0)
+  const [createdBy, setCreatedBy] = useState('')
+  const debouncedCreatedBy = useDebouncedValue(createdBy, 200)
   const [apiKeysState, setApiKeysState] = useState<ResourceState<ProjectApiKeysPageResponse>>({
     data: null,
     isLoading: true,
     errorMessage: null,
   })
   const apiKeysRequestIdRef = useRef(0)
+  const createdByFilter = debouncedCreatedBy.trim()
+  const isCreatedByDebouncing = createdBy !== debouncedCreatedBy
   const apiKeys = apiKeysState.data?.content ?? []
   const totalApiKeys = getPageTotal(apiKeysState.data)
   const hasInitialLoading = apiKeysState.isLoading && !apiKeysState.data
@@ -140,6 +149,7 @@ export function ProjectApiKeysTab({ isActive, projectId }: ProjectApiKeysTabProp
       const { data, errorMessage } = await fetchResource(
         () =>
           getProjectApiKeys({
+            createdBy: createdByFilter || undefined,
             projectId,
             page: pageToLoad,
             size: projectResourcePageSize,
@@ -155,18 +165,14 @@ export function ProjectApiKeysTab({ isActive, projectId }: ProjectApiKeysTabProp
         })
       }
     },
-    [projectId],
+    [createdByFilter, projectId],
   )
 
   useEffect(() => {
-    if (!isActive) {
-      return
-    }
-
     let shouldLoad = true
 
     queueMicrotask(() => {
-      if (shouldLoad) {
+      if (shouldLoad && isActive && !isCreatedByDebouncing) {
         void loadApiKeys(page)
       }
     })
@@ -175,7 +181,12 @@ export function ProjectApiKeysTab({ isActive, projectId }: ProjectApiKeysTabProp
       shouldLoad = false
       apiKeysRequestIdRef.current += 1
     }
-  }, [isActive, loadApiKeys, page])
+  }, [isActive, isCreatedByDebouncing, loadApiKeys, page])
+
+  function updateCreatedBy(value: string) {
+    setCreatedBy(value)
+    setPage(0)
+  }
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(currentPage - 1, 0))
@@ -199,6 +210,20 @@ export function ProjectApiKeysTab({ isActive, projectId }: ProjectApiKeysTabProp
           )}
         </div>
       </TabHeader>
+
+      <FiltersGrid>
+        <FilterField>
+          <FilterLabel>Criador</FilterLabel>
+          <FilterInput
+            aria-label="Buscar API keys por email ou nome do criador"
+            autoComplete="off"
+            placeholder="Buscar por email ou nome"
+            type="search"
+            value={createdBy}
+            onChange={(event) => updateCreatedBy(event.target.value)}
+          />
+        </FilterField>
+      </FiltersGrid>
 
       {apiKeysState.errorMessage ? (
         <ResourceError

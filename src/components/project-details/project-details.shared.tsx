@@ -159,6 +159,34 @@ export function formatDateTime(value?: string | null) {
   return dateTimeFormatter.format(date)
 }
 
+export function getDateFilterBoundary(value: string, boundary: 'start' | 'end') {
+  if (!value) {
+    return undefined
+  }
+
+  const [year, month, day] = value.split('-').map(Number)
+
+  if (!year || !month || !day) {
+    return undefined
+  }
+
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+    boundary === 'start' ? 0 : 23,
+    boundary === 'start' ? 0 : 59,
+    boundary === 'start' ? 0 : 59,
+    boundary === 'start' ? 0 : 999,
+  )
+
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return undefined
+  }
+
+  return date.toISOString()
+}
+
 export function getTrimmedText(value?: string | null) {
   return value?.trim() || null
 }
