@@ -8,11 +8,14 @@ import type {
   CreateAccountRequest,
 } from '@/types/account-types'
 import type { ApiErrorResponse } from '@/types/api-response-types'
+import type { AccountSubscriptionResponse } from '@/types/plan-types'
 
 const defaultCreateAccountErrorMessage =
   'Não foi possível criar a conta. Revise os dados e tente novamente.'
 const defaultAccountSummaryErrorMessage =
   'Não foi possível carregar o resumo da conta. Tente novamente em alguns instantes.'
+const defaultAccountSubscriptionErrorMessage =
+  'Não foi possível carregar a assinatura da conta. Tente novamente em alguns instantes.'
 
 export class CreateAccountServiceError extends Error {
   response: ApiErrorResponse
@@ -37,6 +40,21 @@ export class AccountSummaryServiceError extends Error {
 
     super(message)
     this.name = 'AccountSummaryServiceError'
+    this.response = {
+      ...response,
+      message,
+    }
+  }
+}
+
+export class AccountSubscriptionServiceError extends Error {
+  response: ApiErrorResponse
+
+  constructor(response: ApiErrorResponse) {
+    const message = response.message || response.error || defaultAccountSubscriptionErrorMessage
+
+    super(message)
+    this.name = 'AccountSubscriptionServiceError'
     this.response = {
       ...response,
       message,
@@ -92,12 +110,22 @@ function normalizeAccountSummaryError(error: unknown): ApiErrorResponse {
   return normalizeAccountError(error, defaultAccountSummaryErrorMessage)
 }
 
+function normalizeAccountSubscriptionError(error: unknown): ApiErrorResponse {
+  return normalizeAccountError(error, defaultAccountSubscriptionErrorMessage)
+}
+
 export function isCreateAccountServiceError(error: unknown): error is CreateAccountServiceError {
   return error instanceof CreateAccountServiceError
 }
 
 export function isAccountSummaryServiceError(error: unknown): error is AccountSummaryServiceError {
   return error instanceof AccountSummaryServiceError
+}
+
+export function isAccountSubscriptionServiceError(
+  error: unknown,
+): error is AccountSubscriptionServiceError {
+  return error instanceof AccountSubscriptionServiceError
 }
 
 export async function createAccount(data: CreateAccountRequest) {
@@ -113,5 +141,13 @@ export async function getAccountSummary() {
     return await api.get<AccountSummaryResponse>(apiUrls.accounts.summary)
   } catch (error: unknown) {
     throw new AccountSummaryServiceError(normalizeAccountSummaryError(error))
+  }
+}
+
+export async function getAccountSubscription() {
+  try {
+    return await api.get<AccountSubscriptionResponse>(apiUrls.accounts.subscription)
+  } catch (error: unknown) {
+    throw new AccountSubscriptionServiceError(normalizeAccountSubscriptionError(error))
   }
 }

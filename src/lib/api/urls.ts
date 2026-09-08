@@ -7,6 +7,7 @@ export const apiUrls = {
     create: '/accounts/create',
     me: '/accounts/me',
     summary: '/accounts/me/summary',
+    subscription: '/accounts/me/subscription',
   },
   auth: {
     login: '/auth/login',
@@ -39,6 +40,13 @@ export const apiUrls = {
       byId: (projectId: string | number, userId: string | number) =>
         `/projects/${pathParam(projectId)}/users/${pathParam(userId)}` as BackendUrl,
     },
+    members: {
+      list: (projectId: string | number) =>
+        `/projects/${pathParam(projectId)}/members` as BackendUrl,
+    },
+  },
+  plans: {
+    list: '/plans',
   },
   users: {
     create: '/users',

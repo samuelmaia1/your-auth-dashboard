@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, RefreshCcw, type LucideIcon } from 'lucide-r
 import type { ReactNode } from 'react'
 
 import { isProjectsServiceError } from '@/services/project.service'
-import type { ProjectEnvironment, ProjectStatus } from '@/types/account-types'
+import type { AccountProjectRole, ProjectEnvironment, ProjectStatus } from '@/types/account-types'
 import type { ApiPageResponse } from '@/types/api-response-types'
 import type {
   AccountBasicResponse,
@@ -44,7 +44,7 @@ import {
 export type BadgeTone = 'success' | 'danger' | 'neutral' | 'info'
 
 export type ProjectDetailsTab =
-  'sessions' | 'users' | 'password-policy' | 'auth-policy' | 'api-keys'
+  'sessions' | 'users' | 'members' | 'password-policy' | 'auth-policy' | 'api-keys'
 
 export type ResourceState<TData> = {
   data: TData | null
@@ -96,6 +96,13 @@ const projectUserStatusLabels: Record<ProjectUserStatus, string> = {
   BLOCKED: 'Bloqueado',
 }
 
+const projectMemberRoleLabels: Record<AccountProjectRole, string> = {
+  OWNER: 'Proprietário',
+  ADMIN: 'Administrador',
+  DEVELOPER: 'Desenvolvedor',
+  VIEWER: 'Visualizador',
+}
+
 const projectUserSessionStatusLabels: Record<ProjectUserSessionStatus, string> = {
   ACTIVE: 'Ativa',
   INACTIVE: 'Inativa',
@@ -124,6 +131,13 @@ const projectUserStatusBadgeTones: Record<ProjectUserStatus, BadgeTone> = {
   ACTIVE: 'success',
   DISABLED: 'neutral',
   BLOCKED: 'danger',
+}
+
+const projectMemberRoleBadgeTones: Record<AccountProjectRole, BadgeTone> = {
+  OWNER: 'success',
+  ADMIN: 'info',
+  DEVELOPER: 'neutral',
+  VIEWER: 'neutral',
 }
 
 const projectUserSessionStatusBadgeTones: Record<ProjectUserSessionStatus, BadgeTone> = {
@@ -219,6 +233,14 @@ export function getUserStatusLabel(status?: ProjectUserStatus) {
 
 export function getUserStatusBadgeTone(status?: ProjectUserStatus): BadgeTone {
   return status ? (projectUserStatusBadgeTones[status] ?? 'neutral') : 'neutral'
+}
+
+export function getMemberRoleLabel(role?: AccountProjectRole) {
+  return role ? (projectMemberRoleLabels[role] ?? role) : 'Papel não informado'
+}
+
+export function getMemberRoleBadgeTone(role?: AccountProjectRole): BadgeTone {
+  return role ? (projectMemberRoleBadgeTones[role] ?? 'neutral') : 'neutral'
 }
 
 export function getSessionStatusLabel(status?: ProjectUserSessionStatus) {

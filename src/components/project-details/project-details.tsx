@@ -1,6 +1,15 @@
 'use client'
 
-import { Activity, ArrowLeft, Key, KeyRound, RefreshCcw, ShieldCheck, Users } from 'lucide-react'
+import {
+  Activity,
+  ArrowLeft,
+  Key,
+  KeyRound,
+  RefreshCcw,
+  ShieldCheck,
+  UserCheck,
+  Users,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getProjectById } from '@/services/project.service'
@@ -47,6 +56,11 @@ const projectDetailsTabs: ProjectDetailsTabItem[] = [
     key: 'users',
     label: 'Usuários',
     icon: Users,
+  },
+  {
+    key: 'members',
+    label: 'Membros',
+    icon: UserCheck,
   },
   {
     key: 'password-policy',
@@ -147,11 +161,7 @@ export function ProjectDetails({ projectId }: ProjectDetailsProps) {
         <ResourceError message={projectState.errorMessage} onRetry={loadProject} />
       ) : (
         <>
-          <ProjectOverviewDetails
-            isLoading={projectState.isLoading}
-            project={project}
-            projectId={projectId}
-          />
+          <ProjectOverviewDetails isLoading={projectState.isLoading} project={project} />
 
           <TabsSection>
             <TabList role="tablist" aria-label="Dados do projeto">

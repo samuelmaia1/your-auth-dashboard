@@ -7,6 +7,7 @@ import {
   Folder,
   House,
   KeyRound,
+  Layers,
   LockKeyhole,
   Menu,
   MessageSquare,
@@ -59,9 +60,14 @@ const mainNavigation: NavigationItem[] = [
     icon: Folder,
   },
   {
-    label: 'Plano',
-    href: '/home/plano',
+    label: 'Assinatura',
+    href: '/assinatura',
     icon: CreditCard,
+  },
+  {
+    label: 'Planos',
+    href: '/planos',
+    icon: Layers,
   },
   {
     label: 'Documentação',
