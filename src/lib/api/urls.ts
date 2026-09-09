@@ -39,10 +39,20 @@ export const apiUrls = {
       list: (projectId: string | number) => `/projects/${pathParam(projectId)}/users` as BackendUrl,
       byId: (projectId: string | number, userId: string | number) =>
         `/projects/${pathParam(projectId)}/users/${pathParam(userId)}` as BackendUrl,
+      sessions: {
+        list: (projectId: string | number, userId: string | number) =>
+          `/projects/${pathParam(projectId)}/users/${pathParam(userId)}/sessions` as BackendUrl,
+        byId: (projectId: string | number, userId: string | number, sessionId: string | number) =>
+          `/projects/${pathParam(projectId)}/users/${pathParam(userId)}/sessions/${pathParam(
+            sessionId,
+          )}` as BackendUrl,
+      },
     },
     members: {
       list: (projectId: string | number) =>
         `/projects/${pathParam(projectId)}/members` as BackendUrl,
+      byAccountId: (projectId: string | number, accountId: string | number) =>
+        `/projects/${pathParam(projectId)}/members/${pathParam(accountId)}` as BackendUrl,
     },
   },
   plans: {

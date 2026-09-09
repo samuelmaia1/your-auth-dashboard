@@ -109,10 +109,6 @@ export function ProjectPasswordPolicyTab({ isActive, projectId }: ProjectPasswor
       label: 'Caractere especial obrigatório',
       value: <BooleanBadge value={passwordConfigState.data?.specialCharRequired} />,
     },
-    {
-      label: 'Intervalo válido',
-      value: <BooleanBadge value={passwordConfigState.data?.validRange} />,
-    },
   ]
 
   if (!isActive) {

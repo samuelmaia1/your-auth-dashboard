@@ -73,6 +73,10 @@ function MemberRecord({ member }: { member: ProjectMemberResponse }) {
           </RecordValue>
         </RecordDetail>
         <RecordDetail>
+          <RecordLabel>Conta</RecordLabel>
+          <RecordValue>{getDisplayText(member.accountId)}</RecordValue>
+        </RecordDetail>
+        <RecordDetail>
           <RecordLabel>Nome</RecordLabel>
           <RecordValue>{getDisplayText(member.name)}</RecordValue>
         </RecordDetail>
@@ -186,9 +190,12 @@ export function ProjectMembersTab({ isActive, projectId }: ProjectMembersTabProp
             ) : members.length > 0 ? (
               members.map((member, index) => (
                 <MemberRecord
-                  key={`${member.name ?? 'member'}-${member.lastName ?? 'record'}-${
-                    member.joinedAt ?? index
-                  }-${index}`}
+                  key={
+                    member.accountId ??
+                    `${member.name ?? 'member'}-${member.lastName ?? 'record'}-${
+                      member.joinedAt ?? index
+                    }-${index}`
+                  }
                   member={member}
                 />
               ))

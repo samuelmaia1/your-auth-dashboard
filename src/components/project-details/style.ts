@@ -324,6 +324,10 @@ export const SectionSubtitle = styled('p')(({ theme }) => ({
   lineHeight: '20px',
 }))
 
+export const TabActionButton = styled(Button)({
+  gap: 8,
+})
+
 export const FiltersGrid = styled('div')(({ theme }) => ({
   display: 'grid',
   gap: 10,
@@ -466,6 +470,17 @@ export const RecordDescription = styled('p')(({ theme }) => ({
   fontSize: 13,
   lineHeight: '20px',
 }))
+
+export const RecordActions = styled('div')({
+  marginTop: 12,
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 8,
+})
+
+export const RecordActionButton = styled(Button)({
+  gap: 6,
+})
 
 export const RecordDetails = styled('dl')(({ theme }) => ({
   margin: 0,

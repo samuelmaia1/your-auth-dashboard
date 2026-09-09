@@ -73,6 +73,7 @@ export interface ProjectUserResponse {
 export type ProjectUsersPageResponse = ApiPageResponse<ProjectUserResponse>
 
 export interface ProjectMemberResponse {
+  accountId?: string
   name?: string
   lastName?: string
   role?: AccountProjectRole

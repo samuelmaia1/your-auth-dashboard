@@ -6,6 +6,7 @@ import {
   Key,
   KeyRound,
   RefreshCcw,
+  Settings,
   ShieldCheck,
   UserCheck,
   Users,
@@ -150,6 +151,14 @@ export function ProjectDetails({ projectId }: ProjectDetailsProps) {
             <ArrowLeft size={16} />
             Projetos
           </BackLink>
+          <HeaderButton
+            href={`/projetos/${encodeURIComponent(projectId)}/configuracoes`}
+            size="lg"
+            variant="outline"
+          >
+            <Settings size={16} />
+            Configurações
+          </HeaderButton>
           <HeaderButton type="button" size="lg" variant="outline" onClick={loadProject}>
             <RefreshCcw size={16} />
             Atualizar

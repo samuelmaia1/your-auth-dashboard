@@ -1,9 +1,23 @@
 'use client'
 
+import { Ban, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@components/ui/alert-dialog'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
-import { getProjectSessions } from '@/services/project.service'
+import {
+  getProjectSessions,
+  revokeAllProjectUserSessions,
+  revokeProjectUserSession,
+} from '@/services/project.service'
 import type {
   ProjectUserSessionResponse,
   ProjectUserSessionStatus,
@@ -17,6 +31,7 @@ import {
   getDateFilterBoundary,
   getDisplayText,
   getPageTotal,
+  getProjectErrorMessage,
   getSessionStatusBadgeTone,
   getSessionStatusLabel,
   getTrimmedText,
@@ -38,6 +53,9 @@ import {
   FilterLabel,
   FiltersGrid,
   FilterSelect,
+  ErrorMessage,
+  RecordActionButton,
+  RecordActions,
   RecordCard,
   RecordDescription,
   RecordDetail,
@@ -58,17 +76,40 @@ type ProjectSessionsTabProps = {
 
 const defaultSessionsErrorMessage =
   'Não foi possível carregar as sessões do projeto. Tente novamente em alguns instantes.'
+const defaultRevokeSessionErrorMessage =
+  'Não foi possível revogar a sessão. Tente novamente em alguns instantes.'
 
-function SessionRecord({ session }: { session: ProjectUserSessionResponse }) {
+type SessionRecordProps = {
+  isRevoking: boolean
+  onRequestRevoke: (session: ProjectUserSessionResponse) => void
+  session: ProjectUserSessionResponse
+}
+
+type RevokeSessionMode = 'single' | 'all'
+
+function SessionRecord({ isRevoking, onRequestRevoke, session }: SessionRecordProps) {
   const sessionDescription =
     joinDetails([getTrimmedText(session.deviceName), session.id ? `Sessão ${session.id}` : null]) ||
     'Sessão sem identificação'
+  const canRevokeSession = Boolean(session.id && session.userId && session.status === 'ACTIVE')
 
   return (
     <RecordCard>
       <RecordMain>
         <RecordTitle>{getUserTitle(session.user, session.userId)}</RecordTitle>
         <RecordDescription>{sessionDescription}</RecordDescription>
+        <RecordActions>
+          <RecordActionButton
+            type="button"
+            size="sm"
+            variant="destructive"
+            disabled={!canRevokeSession || isRevoking}
+            onClick={() => onRequestRevoke(session)}
+          >
+            <Ban size={16} />
+            Revogar sessão
+          </RecordActionButton>
+        </RecordActions>
       </RecordMain>
 
       <RecordDetails>
@@ -111,6 +152,10 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
   const [lastUsedAtFromDate, setLastUsedAtFromDate] = useState('')
   const [lastUsedAtToDate, setLastUsedAtToDate] = useState('')
   const [sessionUserEmail, setSessionUserEmail] = useState('')
+  const [sessionPendingRevoke, setSessionPendingRevoke] =
+    useState<ProjectUserSessionResponse | null>(null)
+  const [revokeErrorMessage, setRevokeErrorMessage] = useState<string | null>(null)
+  const [isRevokingSession, setIsRevokingSession] = useState(false)
   const debouncedSessionUserEmail = useDebouncedValue(sessionUserEmail, 200)
   const [sessionsState, setSessionsState] = useState<
     ResourceState<ProjectUserSessionsPageResponse>
@@ -207,6 +252,50 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
     setPage((currentPage) => currentPage + 1)
   }
 
+  function handleRequestRevoke(session: ProjectUserSessionResponse) {
+    setRevokeErrorMessage(null)
+    setSessionPendingRevoke(session)
+  }
+
+  async function handleRevokeSession(mode: RevokeSessionMode) {
+    if (!sessionPendingRevoke) {
+      return
+    }
+
+    const sessionId = sessionPendingRevoke.id?.trim()
+    const userId = sessionPendingRevoke.userId?.trim()
+
+    if (!userId || (mode === 'single' && !sessionId)) {
+      setRevokeErrorMessage('A sessão não retornou os identificadores necessários para revogar.')
+      return
+    }
+
+    setIsRevokingSession(true)
+    setRevokeErrorMessage(null)
+
+    try {
+      if (mode === 'single') {
+        await revokeProjectUserSession({
+          projectId,
+          sessionId: sessionId as string,
+          userId,
+        })
+      } else {
+        await revokeAllProjectUserSessions({
+          projectId,
+          userId,
+        })
+      }
+
+      setSessionPendingRevoke(null)
+      await loadSessions(page)
+    } catch (error: unknown) {
+      setRevokeErrorMessage(getProjectErrorMessage(error, defaultRevokeSessionErrorMessage))
+    } finally {
+      setIsRevokingSession(false)
+    }
+  }
+
   if (!isActive) {
     return null
   }
@@ -290,6 +379,8 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
               sessions.map((session, index) => (
                 <SessionRecord
                   key={session.id ?? `${session.userId ?? 'session'}-${index}`}
+                  isRevoking={isRevokingSession}
+                  onRequestRevoke={handleRequestRevoke}
                   session={session}
                 />
               ))
@@ -312,6 +403,54 @@ export function ProjectSessionsTab({ isActive, projectId }: ProjectSessionsTabPr
             onPreviousPage={goToPreviousPage}
             pageData={sessionsState.data}
           />
+
+          <AlertDialog
+            open={Boolean(sessionPendingRevoke)}
+            onOpenChange={(open) => {
+              if (!open && !isRevokingSession) {
+                setSessionPendingRevoke(null)
+                setRevokeErrorMessage(null)
+              }
+            }}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>Revogar sessão</AlertDialogTitle>
+              <AlertDialogDescription>
+                {sessionPendingRevoke
+                  ? `Escolha como revogar as sessões de ${getUserTitle(
+                      sessionPendingRevoke.user,
+                      sessionPendingRevoke.userId,
+                    )}.`
+                  : 'Escolha como revogar as sessões deste usuário.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {revokeErrorMessage && <ErrorMessage role="alert">{revokeErrorMessage}</ErrorMessage>}
+
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isRevokingSession}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={isRevokingSession}
+                onClick={() => {
+                  void handleRevokeSession('single')
+                }}
+              >
+                {isRevokingSession ? <LoaderCircle size={16} /> : <Ban size={16} />}
+                Revogar esta
+              </AlertDialogAction>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={isRevokingSession}
+                onClick={() => {
+                  void handleRevokeSession('all')
+                }}
+              >
+                {isRevokingSession ? <LoaderCircle size={16} /> : <Ban size={16} />}
+                Revogar todas
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialog>
         </>
       )}
     </>

@@ -9,8 +9,10 @@ import type {
   CreatedProjectApiKeyResponse,
   ProjectApiKeysPageResponse,
   ProjectAuthConfigResponse,
+  ProjectAuthConfigRequest,
   ProjectMembersPageResponse,
   ProjectPasswordConfigResponse,
+  ProjectPasswordConfigRequest,
   ProjectsPageResponse,
   ProjectResponse,
   ProjectUsersPageResponse,
@@ -60,6 +62,14 @@ const defaultProjectAuthConfigErrorMessage =
   'Não foi possível carregar a política de autenticação. Tente novamente em alguns instantes.'
 const defaultProjectApiKeysErrorMessage =
   'Não foi possível carregar as API keys do projeto. Tente novamente em alguns instantes.'
+const defaultUpdateProjectPasswordConfigErrorMessage =
+  'Não foi possível atualizar a política de senha. Revise os dados e tente novamente.'
+const defaultUpdateProjectAuthConfigErrorMessage =
+  'Não foi possível atualizar a política de autenticação. Revise os dados e tente novamente.'
+const defaultDeleteProjectMemberErrorMessage =
+  'Não foi possível remover o membro do projeto. Tente novamente em alguns instantes.'
+const defaultRevokeProjectSessionErrorMessage =
+  'Não foi possível revogar a sessão. Tente novamente em alguns instantes.'
 const defaultCreateProjectErrorMessage =
   'Não foi possível criar o projeto. Revise os dados e tente novamente.'
 const defaultCreateProjectApiKeyErrorMessage =
@@ -249,6 +259,23 @@ export async function getProjectMembers({ page, projectId, size }: GetProjectPag
   }
 }
 
+export async function deleteProjectMember({
+  accountId,
+  projectId,
+}: {
+  accountId: string
+  projectId: string
+}) {
+  try {
+    return await api.delete<void>(apiUrls.projects.members.byAccountId(projectId, accountId))
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultDeleteProjectMemberErrorMessage),
+      defaultDeleteProjectMemberErrorMessage,
+    )
+  }
+}
+
 export async function getProjectPasswordConfig(projectId: string) {
   try {
     return await api.get<ProjectPasswordConfigResponse>(apiUrls.projects.passwordConfig(projectId))
@@ -260,6 +287,26 @@ export async function getProjectPasswordConfig(projectId: string) {
   }
 }
 
+export async function updateProjectPasswordConfig({
+  data,
+  projectId,
+}: {
+  data: ProjectPasswordConfigRequest
+  projectId: string
+}) {
+  try {
+    return await api.put<ProjectPasswordConfigResponse, ProjectPasswordConfigRequest>(
+      apiUrls.projects.passwordConfig(projectId),
+      data,
+    )
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultUpdateProjectPasswordConfigErrorMessage),
+      defaultUpdateProjectPasswordConfigErrorMessage,
+    )
+  }
+}
+
 export async function getProjectAuthConfig(projectId: string) {
   try {
     return await api.get<ProjectAuthConfigResponse>(apiUrls.projects.authConfig(projectId))
@@ -267,6 +314,26 @@ export async function getProjectAuthConfig(projectId: string) {
     throw new ProjectsServiceError(
       normalizeProjectsError(error, defaultProjectAuthConfigErrorMessage),
       defaultProjectAuthConfigErrorMessage,
+    )
+  }
+}
+
+export async function updateProjectAuthConfig({
+  data,
+  projectId,
+}: {
+  data: ProjectAuthConfigRequest
+  projectId: string
+}) {
+  try {
+    return await api.put<ProjectAuthConfigResponse, ProjectAuthConfigRequest>(
+      apiUrls.projects.authConfig(projectId),
+      data,
+    )
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultUpdateProjectAuthConfigErrorMessage),
+      defaultUpdateProjectAuthConfigErrorMessage,
     )
   }
 }
@@ -289,6 +356,44 @@ export async function getProjectApiKeys({
     throw new ProjectsServiceError(
       normalizeProjectsError(error, defaultProjectApiKeysErrorMessage),
       defaultProjectApiKeysErrorMessage,
+    )
+  }
+}
+
+export async function revokeProjectUserSession({
+  projectId,
+  sessionId,
+  userId,
+}: {
+  projectId: string
+  sessionId: string
+  userId: string
+}) {
+  try {
+    return await api.delete<void>(
+      apiUrls.projects.users.sessions.byId(projectId, userId, sessionId),
+    )
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultRevokeProjectSessionErrorMessage),
+      defaultRevokeProjectSessionErrorMessage,
+    )
+  }
+}
+
+export async function revokeAllProjectUserSessions({
+  projectId,
+  userId,
+}: {
+  projectId: string
+  userId: string
+}) {
+  try {
+    return await api.delete<void>(apiUrls.projects.users.sessions.list(projectId, userId))
+  } catch (error: unknown) {
+    throw new ProjectsServiceError(
+      normalizeProjectsError(error, defaultRevokeProjectSessionErrorMessage),
+      defaultRevokeProjectSessionErrorMessage,
     )
   }
 }

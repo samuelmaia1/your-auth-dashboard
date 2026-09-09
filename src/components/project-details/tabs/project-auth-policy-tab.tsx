@@ -124,10 +124,6 @@ export function ProjectAuthPolicyTab({ isActive, projectId }: ProjectAuthPolicyT
       label: 'Cadastro habilitado',
       value: <BooleanBadge value={authConfigState.data?.registrationEnabled} />,
     },
-    {
-      label: 'Máximo exigido no modo limitado',
-      value: <BooleanBadge value={authConfigState.data?.maxActiveSessionsRequiredWhenLimited} />,
-    },
   ]
 
   if (!isActive) {
