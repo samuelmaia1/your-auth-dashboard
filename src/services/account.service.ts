@@ -3,6 +3,7 @@ import axios from 'axios'
 import { api } from '@lib/api/axios'
 import { apiUrls } from '@lib/api/urls'
 import type {
+  AccountBasicResponse,
   AccountResponse,
   AccountSummaryResponse,
   CreateAccountRequest,
@@ -16,6 +17,8 @@ const defaultAccountSummaryErrorMessage =
   'Não foi possível carregar o resumo da conta. Tente novamente em alguns instantes.'
 const defaultAccountSubscriptionErrorMessage =
   'Não foi possível carregar a assinatura da conta. Tente novamente em alguns instantes.'
+const defaultAccountLookupErrorMessage =
+  'Não foi possível pesquisar a conta. Tente novamente em alguns instantes.'
 
 export class CreateAccountServiceError extends Error {
   response: ApiErrorResponse
@@ -55,6 +58,21 @@ export class AccountSubscriptionServiceError extends Error {
 
     super(message)
     this.name = 'AccountSubscriptionServiceError'
+    this.response = {
+      ...response,
+      message,
+    }
+  }
+}
+
+export class AccountLookupServiceError extends Error {
+  response: ApiErrorResponse
+
+  constructor(response: ApiErrorResponse) {
+    const message = response.message || response.error || defaultAccountLookupErrorMessage
+
+    super(message)
+    this.name = 'AccountLookupServiceError'
     this.response = {
       ...response,
       message,
@@ -128,6 +146,10 @@ export function isAccountSubscriptionServiceError(
   return error instanceof AccountSubscriptionServiceError
 }
 
+export function isAccountLookupServiceError(error: unknown): error is AccountLookupServiceError {
+  return error instanceof AccountLookupServiceError
+}
+
 export async function createAccount(data: CreateAccountRequest) {
   try {
     return await api.post<AccountResponse, CreateAccountRequest>(apiUrls.accounts.create, data)
@@ -149,5 +171,17 @@ export async function getAccountSubscription() {
     return await api.get<AccountSubscriptionResponse>(apiUrls.accounts.subscription)
   } catch (error: unknown) {
     throw new AccountSubscriptionServiceError(normalizeAccountSubscriptionError(error))
+  }
+}
+
+export async function findAccountByEmail(email: string) {
+  try {
+    return await api.get<AccountBasicResponse>(apiUrls.accounts.byEmail, {
+      params: { email },
+    })
+  } catch (error: unknown) {
+    throw new AccountLookupServiceError(
+      normalizeAccountError(error, defaultAccountLookupErrorMessage),
+    )
   }
 }

@@ -40,6 +40,13 @@ export interface AccountResponse {
   CPF?: string
 }
 
+export interface AccountBasicResponse {
+  id?: string
+  name?: string
+  lastName?: string
+  email?: string
+}
+
 export type ProjectStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 
 export type ProjectEnvironment = 'DEVELOPMENT' | 'PRODUCTION'

@@ -12,7 +12,11 @@ import {
 } from 'react'
 
 import { SessionLoading } from '@components/session-loading'
-import { loginAccount, validateAccountSession } from '@/services/auth-account.service'
+import {
+  loginAccount,
+  logoutAccountSession,
+  validateAccountSession,
+} from '@/services/auth-account.service'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 
 type AuthSessionStatus = 'checking' | 'authenticated' | 'unauthenticated'
@@ -25,6 +29,7 @@ export type AuthContextValue = {
   isCheckingSession: boolean
   status: AuthSessionStatus
   login: (data: LoginAccountRequest) => Promise<AccountResponse>
+  logout: () => Promise<void>
   validateSession: () => Promise<boolean>
   fetchAccountData: () => Promise<AccountResponse | null>
 }
@@ -107,6 +112,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [router],
   )
 
+  const logout = useCallback(async () => {
+    setIsLoadingAccount(true)
+
+    try {
+      await logoutAccountSession()
+
+      validationRequestIdRef.current += 1
+      authenticatedAccountRef.current = null
+      setAuthenticatedAccount(null)
+      setStatus('unauthenticated')
+      router.replace('/')
+    } finally {
+      setIsLoadingAccount(false)
+    }
+  }, [router])
+
   const fetchAccountData = useCallback(async () => {
     if (authenticatedAccountRef.current) {
       return authenticatedAccountRef.current
@@ -157,10 +178,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isCheckingSession: status === 'checking',
       status,
       login,
+      logout,
       validateSession,
       fetchAccountData,
     }),
-    [authenticatedAccount, fetchAccountData, isLoadingAccount, login, status, validateSession],
+    [
+      authenticatedAccount,
+      fetchAccountData,
+      isLoadingAccount,
+      login,
+      logout,
+      status,
+      validateSession,
+    ],
   )
   const shouldShowSessionLoading =
     status === 'checking' ||

@@ -31,6 +31,14 @@ export const HeaderContent = styled('div')({
   minWidth: 0,
 })
 
+export const HeaderActions = styled('div')({
+  display: 'flex',
+  flexShrink: 0,
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 14,
+})
+
 export const HeaderEyebrow = styled('p')(({ theme }) => ({
   color: (theme.vars || theme).palette.success.main,
   fontSize: 12,
@@ -312,6 +320,31 @@ export const ErrorActions = styled('div')({
 
 export const RetryButton = styled(Button)({
   gap: 8,
+})
+
+export const LogoutButton = styled(Button)(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    color: palette.text.secondary,
+
+    '&:hover': {
+      borderColor: theme.alpha(palette.error.main, 0.28),
+      backgroundColor: theme.alpha(palette.error.main, 0.08),
+      color: palette.error.main,
+    },
+  }
+})
+
+export const LogoutSpinner = styled('span')({
+  display: 'inline-flex',
+  animation: 'home-dashboard-logout-spin 850ms linear infinite',
+
+  '@keyframes home-dashboard-logout-spin': {
+    to: {
+      transform: 'rotate(360deg)',
+    },
+  },
 })
 
 export const EmptyState = styled('div')(({ theme }) => {

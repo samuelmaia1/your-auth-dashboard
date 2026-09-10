@@ -4,6 +4,7 @@ const pathParam = (value: string | number) => encodeURIComponent(String(value))
 
 export const apiUrls = {
   accounts: {
+    byEmail: '/accounts',
     create: '/accounts/create',
     me: '/accounts/me',
     summary: '/accounts/me/summary',
@@ -11,6 +12,7 @@ export const apiUrls = {
   },
   auth: {
     login: '/auth/login',
+    logout: '/auth/logout',
     refresh: '/auth/refresh',
     mobileLogin: '/auth/mobile/login',
     mobileRefresh: '/auth/mobile/refresh',
@@ -54,6 +56,14 @@ export const apiUrls = {
       byAccountId: (projectId: string | number, accountId: string | number) =>
         `/projects/${pathParam(projectId)}/members/${pathParam(accountId)}` as BackendUrl,
     },
+    invites: {
+      send: (projectId: string | number) =>
+        `/projects/${pathParam(projectId)}/invites` as BackendUrl,
+    },
+  },
+  invites: {
+    received: '/invites/received',
+    accept: (inviteId: string | number) => `/invites/${pathParam(inviteId)}/accept` as BackendUrl,
   },
   plans: {
     list: '/plans',

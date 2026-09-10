@@ -7,6 +7,13 @@ import type { ApiErrorResponse } from '@/types/api-response-types'
 
 const defaultAuthAccountErrorMessage =
   'Não foi possível autenticar a conta. Revise os dados e tente novamente.'
+const defaultLogoutAccountErrorMessage =
+  'Não foi possível encerrar sua sessão. Tente novamente em alguns instantes.'
+
+type AuthAccountErrorMessageConfig = {
+  defaultMessage: string
+  messagesByStatus: Record<number, string>
+}
 
 const authAccountErrorMessagesByStatus: Record<number, string> = {
   400: 'Não foi possível validar os dados de login. Revise os campos e tente novamente.',
@@ -14,12 +21,31 @@ const authAccountErrorMessagesByStatus: Record<number, string> = {
   500: 'Não foi possível iniciar sua sessão agora. Tente novamente em alguns instantes.',
 }
 
-function getDefaultAuthAccountErrorMessage(status?: number) {
+const logoutAccountErrorMessagesByStatus: Record<number, string> = {
+  400: 'Não foi possível encontrar uma sessão ativa para encerrar.',
+  401: 'Sua sessão não pôde ser validada para logout.',
+  500: 'Não foi possível encerrar sua sessão agora. Tente novamente em alguns instantes.',
+}
+
+const authAccountErrorMessageConfig: AuthAccountErrorMessageConfig = {
+  defaultMessage: defaultAuthAccountErrorMessage,
+  messagesByStatus: authAccountErrorMessagesByStatus,
+}
+
+const logoutAccountErrorMessageConfig: AuthAccountErrorMessageConfig = {
+  defaultMessage: defaultLogoutAccountErrorMessage,
+  messagesByStatus: logoutAccountErrorMessagesByStatus,
+}
+
+function getDefaultAuthAccountErrorMessage(
+  status?: number,
+  config = authAccountErrorMessageConfig,
+) {
   if (!status) {
-    return defaultAuthAccountErrorMessage
+    return config.defaultMessage
   }
 
-  return authAccountErrorMessagesByStatus[status] ?? defaultAuthAccountErrorMessage
+  return config.messagesByStatus[status] ?? config.defaultMessage
 }
 
 export class AuthAccountServiceError extends Error {
@@ -46,7 +72,10 @@ function isApiErrorResponse(data: unknown): data is ApiErrorResponse {
   return typeof data === 'object' && data !== null
 }
 
-export function normalizeAuthAccountError(error: unknown): ApiErrorResponse {
+export function normalizeAuthAccountError(
+  error: unknown,
+  config = authAccountErrorMessageConfig,
+): ApiErrorResponse {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status
     const data = error.response?.data
@@ -67,20 +96,20 @@ export function normalizeAuthAccountError(error: unknown): ApiErrorResponse {
 
     return {
       message: status
-        ? getDefaultAuthAccountErrorMessage(status)
-        : error.message || defaultAuthAccountErrorMessage,
+        ? getDefaultAuthAccountErrorMessage(status, config)
+        : error.message || config.defaultMessage,
       status,
     }
   }
 
   if (error instanceof Error) {
     return {
-      message: error.message || defaultAuthAccountErrorMessage,
+      message: error.message || config.defaultMessage,
     }
   }
 
   return {
-    message: defaultAuthAccountErrorMessage,
+    message: config.defaultMessage,
   }
 }
 
@@ -99,5 +128,15 @@ export async function validateAccountSession() {
     return await api.get<AccountResponse>(apiUrls.accounts.me)
   } catch (error: unknown) {
     throw new AuthAccountServiceError(normalizeAuthAccountError(error))
+  }
+}
+
+export async function logoutAccountSession() {
+  try {
+    await api.post<void>(apiUrls.auth.logout)
+  } catch (error: unknown) {
+    throw new AuthAccountServiceError(
+      normalizeAuthAccountError(error, logoutAccountErrorMessageConfig),
+    )
   }
 }

@@ -61,6 +61,7 @@ const refreshSession = () => {
 
 const nonRefreshableUrls = [
   apiUrls.auth.login,
+  apiUrls.auth.logout,
   apiUrls.auth.refresh,
   apiUrls.auth.mobileLogin,
   apiUrls.auth.mobileRefresh,

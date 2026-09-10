@@ -2,7 +2,8 @@ import { Button as MuiButton } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import type { CSSProperties } from 'react'
 
-export type ButtonVariant = 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive' | 'link'
+export type ButtonVariant =
+  'default' | 'outline' | 'secondary' | 'ghost' | 'success' | 'destructive' | 'link'
 
 export type ButtonSize = 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg'
 
@@ -44,6 +45,10 @@ export const StyledButton = styled(MuiButton, {
       backgroundColor: 'transparent',
       color: palette.text.primary,
     },
+    success: {
+      backgroundColor: palette.success.main,
+      color: palette.success.contrastText,
+    },
     destructive: {
       backgroundColor: theme.alpha(palette.error.main, 0.1),
       color: palette.error.main,
@@ -60,6 +65,7 @@ export const StyledButton = styled(MuiButton, {
     outline: { backgroundColor: palette.muted.main, color: palette.text.primary },
     secondary: { backgroundColor: theme.alpha(palette.secondary.main, 0.8) },
     ghost: { backgroundColor: palette.muted.main, color: palette.text.primary },
+    success: { backgroundColor: theme.alpha(palette.success.main, 0.82) },
     destructive: { backgroundColor: theme.alpha(palette.error.main, 0.2) },
     link: { backgroundColor: 'transparent', textDecoration: 'underline' },
   }

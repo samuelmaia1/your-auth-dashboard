@@ -2,10 +2,14 @@ import { ChevronLeft, ChevronRight, RefreshCcw, type LucideIcon } from 'lucide-r
 import type { ReactNode } from 'react'
 
 import { isProjectsServiceError } from '@/services/project.service'
-import type { AccountProjectRole, ProjectEnvironment, ProjectStatus } from '@/types/account-types'
-import type { ApiPageResponse } from '@/types/api-response-types'
 import type {
   AccountBasicResponse,
+  AccountProjectRole,
+  ProjectEnvironment,
+  ProjectStatus,
+} from '@/types/account-types'
+import type { ApiPageResponse } from '@/types/api-response-types'
+import type {
   ProjectApiKeyDetailsResponse,
   ProjectApiKeyScope,
   ProjectSessionMode,

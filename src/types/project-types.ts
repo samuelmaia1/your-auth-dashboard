@@ -1,4 +1,5 @@
 import type {
+  AccountBasicResponse,
   AccountProjectRole,
   PhoneDTO,
   ProjectEnvironment,
@@ -133,13 +134,6 @@ export interface CreateProjectApiKeyRequest {
   name: string
   scopes: ProjectApiKeyScope[]
   expiresInHours?: number
-}
-
-export interface AccountBasicResponse {
-  id?: string
-  name?: string
-  lastName?: string
-  email?: string
 }
 
 export interface ProjectApiKeyDetailsResponse {
