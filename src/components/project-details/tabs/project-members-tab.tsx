@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getProjectMembers } from '@/services/project.service'
 import type { ProjectMemberResponse, ProjectMembersPageResponse } from '@/types/project-types'
+import { SendProjectInviteModal } from '@components/project-invites'
 
 import {
   fetchResource,
@@ -173,6 +174,7 @@ export function ProjectMembersTab({ isActive, projectId }: ProjectMembersTabProp
             <SectionSubtitle>{formatNumber(totalMembers)} membros encontrados</SectionSubtitle>
           )}
         </div>
+        <SendProjectInviteModal projectId={projectId} />
       </TabHeader>
 
       {membersState.errorMessage ? (

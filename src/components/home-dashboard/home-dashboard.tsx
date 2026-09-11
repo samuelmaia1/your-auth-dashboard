@@ -1,10 +1,11 @@
 'use client'
 
-import { Activity, Folder, RefreshCcw, Users } from 'lucide-react'
+import { Activity, Folder, LoaderCircle, LogOut, RefreshCcw, Users } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAuth } from '@/hooks/use-auth'
 import { getAccountSummary, isAccountSummaryServiceError } from '@/services/account.service'
+import { ReceivedInvitesInbox } from '@components/project-invites'
 import type {
   AccountProjectRole,
   AccountProjectSummaryResponse,
@@ -18,6 +19,7 @@ import {
   EmptyState,
   ErrorActions,
   ErrorMessage,
+  HeaderActions,
   HeaderContent,
   HeaderEyebrow,
   HeaderSubtitle,
@@ -25,6 +27,8 @@ import {
   HomeHeader,
   HomeRoot,
   LoadingBlock,
+  LogoutButton,
+  LogoutSpinner,
   MetricCard,
   MetricIcon,
   MetricLabel,
@@ -195,9 +199,10 @@ function LoadingProjectCards() {
 }
 
 function Dashboard() {
-  const { account, isLoadingAccount } = useAuth()
+  const { account, isLoadingAccount, logout } = useAuth()
   const [summary, setSummary] = useState<AccountSummaryResponse | null>(null)
   const [isLoadingSummary, setIsLoadingSummary] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null)
   const summaryRequestIdRef = useRef(0)
   const accountName = useMemo(
@@ -240,6 +245,20 @@ function Dashboard() {
     }
   }, [])
 
+  const handleLogout = useCallback(async () => {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+
+    try {
+      await logout()
+    } catch {
+      setIsLoggingOut(false)
+    }
+  }, [isLoggingOut, logout])
+
   useEffect(() => {
     const requestId = summaryRequestIdRef.current + 1
 
@@ -272,6 +291,28 @@ function Dashboard() {
                 : 'Visão geral dos projetos vinculados à sua conta.'}
           </HeaderSubtitle>
         </HeaderContent>
+        <HeaderActions>
+          <ReceivedInvitesInbox />
+          <LogoutButton
+            type="button"
+            size="icon"
+            variant="outline"
+            aria-label={isLoggingOut ? 'Saindo da conta' : 'Sair da conta'}
+            title="Sair da conta"
+            disabled={isLoggingOut}
+            onClick={() => {
+              void handleLogout()
+            }}
+          >
+            {isLoggingOut ? (
+              <LogoutSpinner>
+                <LoaderCircle size={18} />
+              </LogoutSpinner>
+            ) : (
+              <LogOut size={18} />
+            )}
+          </LogoutButton>
+        </HeaderActions>
       </HomeHeader>
 
       <MetricsGrid aria-label="Resumo geral">

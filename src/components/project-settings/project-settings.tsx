@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormProvider, useForm, useFormContext, useWatch, type FieldPath } from 'react-hook-form'
 
 import { RHFInput } from '@components/ui/rhf-input/rhf-input'
+import { SendProjectInviteModal } from '@components/project-invites'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -899,22 +900,25 @@ function MembersManagementPanel({ projectId }: ProjectSettingsProps) {
             Membros
           </SettingsTitle>
           <SettingsDescription>
-            Remova membros do projeto pelo identificador de conta esperado pelo endpoint.
+            Envie convites para novas contas e gerencie os membros que já participam do projeto.
           </SettingsDescription>
         </SettingsTitleGroup>
 
-        <ActionButton
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={membersState.isLoading || isDeletingMember}
-          onClick={() => {
-            void loadMembers(page)
-          }}
-        >
-          <RefreshCcw size={16} />
-          Atualizar
-        </ActionButton>
+        <HeaderActions>
+          <SendProjectInviteModal projectId={projectId} triggerContext="settings" />
+          <ActionButton
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={membersState.isLoading || isDeletingMember}
+            onClick={() => {
+              void loadMembers(page)
+            }}
+          >
+            <RefreshCcw size={16} />
+            Atualizar
+          </ActionButton>
+        </HeaderActions>
       </SettingsPanelHeader>
 
       {deleteSuccessMessage && (
