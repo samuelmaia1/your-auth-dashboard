@@ -100,6 +100,38 @@ npm run dev
 
 Depois, acesse o endereço informado pelo Next.js no terminal, normalmente `http://localhost:3000`.
 
+## Configuração da API
+
+O dashboard usa a variável pública `NEXT_PUBLIC_API_BASE_URL` para apontar para o backend Spring
+Boot.
+
+Em desenvolvimento local:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+```
+
+Em produção, quando frontend e backend estiverem no mesmo domínio e o Nginx encaminhar `/api` para o
+Spring Boot:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=/api
+```
+
+Para login social com proxy em `/api`, cadastre os callbacks dos provedores como:
+
+```text
+https://DOMINIO/api/login/oauth2/code/google
+https://DOMINIO/api/login/oauth2/code/github
+```
+
+Em ambiente local, use:
+
+```text
+http://localhost:8080/login/oauth2/code/google
+http://localhost:8080/login/oauth2/code/github
+```
+
 ## Scripts Disponíveis
 
 Os scripts definidos em `package.json` são:

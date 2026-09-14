@@ -1,6 +1,36 @@
 export type BackendUrl = `/${string}`
 
+export type SocialProvider = 'google' | 'github'
+
 const pathParam = (value: string | number) => encodeURIComponent(String(value))
+
+export const normalizeApiBaseUrl = (baseUrl?: string) => {
+  const trimmedBaseUrl = baseUrl?.trim()
+
+  if (!trimmedBaseUrl) {
+    return ''
+  }
+
+  if (trimmedBaseUrl.startsWith('/')) {
+    return trimmedBaseUrl.replace(/\/+$/, '') || '/'
+  }
+
+  const normalizedBaseUrl = /^https?:\/\//i.test(trimmedBaseUrl)
+    ? trimmedBaseUrl
+    : `http://${trimmedBaseUrl}`
+
+  return normalizedBaseUrl.replace(/\/+$/, '')
+}
+
+export const apiBaseUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL)
+
+export const buildBackendUrl = (path: BackendUrl) => {
+  if (!apiBaseUrl || apiBaseUrl === '/') {
+    return path
+  }
+
+  return `${apiBaseUrl}${path}`
+}
 
 export const apiUrls = {
   accounts: {
@@ -14,6 +44,9 @@ export const apiUrls = {
     login: '/auth/login',
     logout: '/auth/logout',
     refresh: '/auth/refresh',
+    socialAuthorization: (provider: SocialProvider) =>
+      `/oauth2/authorization/${provider}` as BackendUrl,
+    socialExchange: '/auth/social/exchange',
     mobileLogin: '/auth/mobile/login',
     mobileRefresh: '/auth/mobile/refresh',
   },

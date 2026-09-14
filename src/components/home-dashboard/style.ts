@@ -1,4 +1,5 @@
 import { styled, type Theme } from '@mui/material/styles'
+import Image from 'next/image'
 import NextLink from 'next/link'
 
 import { Button } from '@components/ui/button/button'
@@ -27,8 +28,42 @@ export const HomeHeader = styled('header')({
   gap: 20,
 })
 
+export const HeaderIdentity = styled('div')({
+  minWidth: 0,
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 14,
+})
+
 export const HeaderContent = styled('div')({
   minWidth: 0,
+})
+
+export const AccountAvatar = styled('span')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: 48,
+    height: 48,
+    display: 'inline-flex',
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    border: `1px solid ${palette.divider}`,
+    borderRadius: 8,
+    backgroundColor: palette.primary.main,
+    color: palette.primary.contrastText,
+    fontSize: 15,
+    fontWeight: 800,
+    lineHeight: '20px',
+  }
+})
+
+export const AccountAvatarImage = styled(Image)({
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
 })
 
 export const HeaderActions = styled('div')({

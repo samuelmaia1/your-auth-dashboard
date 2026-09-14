@@ -1,6 +1,7 @@
 import { styled } from '@mui/material/styles'
 import NextLink from 'next/link'
 
+import { Button } from '@components/ui/button/button'
 import {
   AsideCopy,
   AsideDescription,
@@ -192,6 +193,83 @@ export const LoginForm = styled('form')({
 
 export const LoginPrimaryButton = styled(FullWidthPrimaryButton)({
   marginTop: 4,
+})
+
+export const SocialLoginGroup = styled('div')({
+  marginTop: 24,
+  display: 'grid',
+  gap: 10,
+})
+
+export const SocialLoginButton = styled(Button)(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: '100%',
+    height: 44,
+    justifyContent: 'center',
+    gap: 10,
+    borderColor: palette.divider,
+    backgroundColor: palette.background.default,
+    color: palette.text.primary,
+    fontWeight: 600,
+
+    '&:hover': {
+      borderColor: theme.alpha(palette.primary.main, 0.2),
+      backgroundColor: palette.muted.main,
+    },
+  }
+})
+
+export const SocialIconMark = styled('span')(({ theme }) => ({
+  width: 18,
+  height: 18,
+  display: 'inline-flex',
+  flexShrink: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: 999,
+  color: (theme.vars || theme).palette.text.primary,
+  fontSize: 14,
+  fontWeight: 800,
+  lineHeight: '18px',
+}))
+
+export const SocialLoadingIcon = styled('span')({
+  display: 'inline-flex',
+
+  '@keyframes account-login-social-spin': {
+    to: {
+      transform: 'rotate(360deg)',
+    },
+  },
+
+  '& svg': {
+    animation: 'account-login-social-spin 850ms linear infinite',
+  },
+})
+
+export const SocialLoginSeparator = styled('div')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    marginTop: 22,
+    display: 'grid',
+    gridTemplateColumns: '1fr auto 1fr',
+    alignItems: 'center',
+    gap: 12,
+    color: palette.text.secondary,
+    fontSize: 12,
+    fontWeight: 600,
+    lineHeight: '16px',
+    textTransform: 'uppercase',
+
+    '&::before, &::after': {
+      content: '""',
+      height: 1,
+      backgroundColor: palette.divider,
+    },
+  }
 })
 
 export const LoginSignupFooter = styled('footer')(({ theme }) => ({

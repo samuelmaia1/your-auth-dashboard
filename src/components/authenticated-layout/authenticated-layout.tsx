@@ -18,6 +18,8 @@ import {
 import { usePathname } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
 
+import { SessionLoading } from '@components/session-loading'
+import { useAuth } from '@/hooks/use-auth'
 import {
   AuthenticatedContent,
   AuthenticatedRoot,
@@ -113,7 +115,12 @@ function isNavigationItemActive(pathname: string, item: NavigationItem) {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const pathname = usePathname()
+  const { status } = useAuth()
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
+
+  if (status !== 'authenticated') {
+    return <SessionLoading />
+  }
 
   function closeMobileDrawer() {
     setIsMobileDrawerOpen(false)

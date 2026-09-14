@@ -1,13 +1,14 @@
 'use client'
 
-import { ArrowLeft, CheckCircle2, LoaderCircle, LogIn, UserPlus } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, GitBranch, LoaderCircle, LogIn, UserPlus } from 'lucide-react'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 
 import { Input } from '@components/ui/input/input'
 import { LogoLink } from '@components/account-signup/logo-link'
 import { useAuth } from '@/hooks/use-auth'
-import { isAuthAccountServiceError } from '@/services/auth-account.service'
+import { isAuthAccountServiceError, startSocialLogin } from '@/services/auth-account.service'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
+import type { SocialProvider } from '@lib/api/urls'
 
 import { LoginAside } from './login-aside'
 import {
@@ -29,6 +30,11 @@ import {
   LoginSignupFooterText,
   MobileHeader,
   PageRoot,
+  SocialIconMark,
+  SocialLoadingIcon,
+  SocialLoginButton,
+  SocialLoginGroup,
+  SocialLoginSeparator,
   SubmitLoadingIcon,
 } from './style'
 
@@ -47,6 +53,13 @@ const initialLoginFormValues: LoginFormValues = {
 
 const defaultLoginErrorMessage =
   'Não foi possível entrar. Confira suas credenciais e tente novamente.'
+const defaultSocialLoginStartErrorMessage =
+  'Não foi possível iniciar o login social. Tente novamente em alguns instantes.'
+
+const socialProviderLabels: Record<SocialProvider, string> = {
+  google: 'Google',
+  github: 'GitHub',
+}
 
 function validateLoginForm(data: LoginFormValues) {
   const errors: LoginFieldErrors = {}
@@ -79,7 +92,9 @@ export function AccountLogin() {
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [authenticatedAccount, setAuthenticatedAccount] = useState<AccountResponse | null>(null)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [authenticatingProvider, setAuthenticatingProvider] = useState<SocialProvider | null>(null)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const isLoginActionPending = isAuthenticating || !!authenticatingProvider
   const authenticatedAccountName = authenticatedAccount
     ? `${authenticatedAccount.name ?? ''} ${authenticatedAccount.lastName ?? ''}`.trim()
     : ''
@@ -113,7 +128,7 @@ export function AccountLogin() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (isAuthenticating) {
+    if (isLoginActionPending) {
       return
     }
 
@@ -141,6 +156,40 @@ export function AccountLogin() {
     } finally {
       setIsAuthenticating(false)
     }
+  }
+
+  function handleSocialLogin(provider: SocialProvider) {
+    if (isLoginActionPending) {
+      return
+    }
+
+    setSubmitErrorMessage(null)
+    setFieldErrors({})
+    setAuthenticatedAccount(null)
+    setAuthenticatingProvider(provider)
+
+    try {
+      startSocialLogin(provider)
+    } catch {
+      setAuthenticatingProvider(null)
+      setSubmitErrorMessage(defaultSocialLoginStartErrorMessage)
+    }
+  }
+
+  function renderSocialButtonIcon(provider: SocialProvider) {
+    if (authenticatingProvider === provider) {
+      return (
+        <SocialLoadingIcon>
+          <LoaderCircle size={16} />
+        </SocialLoadingIcon>
+      )
+    }
+
+    if (provider === 'github') {
+      return <GitBranch size={16} />
+    }
+
+    return <SocialIconMark aria-hidden="true">G</SocialIconMark>
   }
 
   return (
@@ -174,6 +223,35 @@ export function AccountLogin() {
               </LoginSuccessAlert>
             )}
 
+            <SocialLoginGroup aria-label="Entrar com provedor social">
+              {(['google', 'github'] as const).map((provider) => {
+                const providerLabel = socialProviderLabels[provider]
+                const isProviderLoading = authenticatingProvider === provider
+
+                return (
+                  <SocialLoginButton
+                    key={provider}
+                    type="button"
+                    size="lg"
+                    variant="outline"
+                    disabled={isLoginActionPending}
+                    aria-busy={isProviderLoading}
+                    aria-label={`Continuar com ${providerLabel}`}
+                    onClick={() => handleSocialLogin(provider)}
+                  >
+                    {renderSocialButtonIcon(provider)}
+                    {isProviderLoading
+                      ? `Conectando com ${providerLabel}...`
+                      : `Continuar com ${providerLabel}`}
+                  </SocialLoginButton>
+                )
+              })}
+            </SocialLoginGroup>
+
+            <SocialLoginSeparator aria-label="ou">
+              <span>ou</span>
+            </SocialLoginSeparator>
+
             <LoginForm onSubmit={handleSubmit} noValidate>
               <FormStack>
                 <Input
@@ -183,7 +261,7 @@ export function AccountLogin() {
                   type="email"
                   value={formValues.email}
                   onChange={handleFieldChange('email')}
-                  disabled={isAuthenticating}
+                  disabled={isLoginActionPending}
                   error={!!fieldErrors.email}
                   helperText={fieldErrors.email}
                 />
@@ -195,7 +273,7 @@ export function AccountLogin() {
                   type={isPasswordVisible ? 'text' : 'password'}
                   value={formValues.password}
                   onChange={handleFieldChange('password')}
-                  disabled={isAuthenticating}
+                  disabled={isLoginActionPending}
                   error={!!fieldErrors.password}
                   helperText={fieldErrors.password}
                   endIcon={isPasswordVisible ? 'eye-off' : 'eye'}
@@ -206,7 +284,7 @@ export function AccountLogin() {
                 <LoginPrimaryButton
                   type="submit"
                   size="lg"
-                  disabled={isAuthenticating}
+                  disabled={isLoginActionPending}
                   aria-busy={isAuthenticating}
                 >
                   {isAuthenticating ? (

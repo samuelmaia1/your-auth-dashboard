@@ -46,7 +46,7 @@
     },
     {
       "name": "Plans",
-      "description": "Catalogo de planos disponiveis para contas proprietarias."
+      "description": "Catálogo de planos disponíveis para contas proprietárias."
     },
     {
       "name": "Account Authentication",
@@ -88,6 +88,7 @@
           "Plans"
         ],
         "summary": "Atualiza os limites de uso de um plano",
+        "description": "Atualiza apenas os limites enviados no corpo da requisição. Campos omitidos permanecem com o valor atual; campos enviados como null removem o limite numérico.",
         "operationId": "updateLimits",
         "parameters": [
           {
@@ -99,8 +100,7 @@
               "enum": [
                 "FREE",
                 "STARTER",
-                "PRO",
-                "BUSINESS"
+                "PRO"
               ]
             }
           }
@@ -127,7 +127,7 @@
             }
           },
           "400": {
-            "description": "Corpo da requisicao invalido.",
+            "description": "Corpo da requisição inválido.",
             "content": {
               "*/*": {
                 "schema": {
@@ -137,7 +137,7 @@
             }
           },
           "404": {
-            "description": "Plano nao encontrado.",
+            "description": "Plano não encontrado.",
             "content": {
               "*/*": {
                 "schema": {
@@ -1610,6 +1610,7 @@
           "Project Members"
         ],
         "summary": "Remove um membro de um projeto",
+        "description": "Owner pode remover qualquer membro. Admin pode remover membros que nao sejam admin. Developer e viewer nao podem remover membros.",
         "operationId": "deleteMember",
         "parameters": [
           {
@@ -1675,6 +1676,116 @@
       }
     },
     "/projects/{projectId}/invites": {
+      "get": {
+        "tags": [
+          "Invites"
+        ],
+        "summary": "Lista convites de um projeto",
+        "operationId": "findAllByProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REFUSED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Convites encontrados.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResultInviteResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parametros de paginacao ou filtros invalidos.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticacao obrigatoria.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta sem acesso ao projeto.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projeto nao encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "Invites"
@@ -1800,6 +1911,19 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REFUSED"
+              ]
+            }
           }
         ],
         "responses": {
@@ -1814,7 +1938,7 @@
             }
           },
           "400": {
-            "description": "Parametros de paginacao invalidos.",
+            "description": "Parametros de paginacao ou filtros invalidos.",
             "content": {
               "*/*": {
                 "schema": {
@@ -1904,6 +2028,85 @@
           },
           "409": {
             "description": "Convite nao esta pendente ou conta ja participa do projeto.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
+    "/invites/{inviteId}/refuse": {
+      "post": {
+        "tags": [
+          "Invites"
+        ],
+        "summary": "Recusa um convite recebido",
+        "operationId": "refuseInvite",
+        "parameters": [
+          {
+            "name": "inviteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Convite recusado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticacao obrigatoria.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta sem permissao para acessar este convite.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Convite nao encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Convite nao esta pendente.",
             "content": {
               "*/*": {
                 "schema": {
@@ -2751,6 +2954,109 @@
           },
           "401": {
             "description": "Credenciais invalidas ou login bloqueado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha ao gerar tokens da sessao.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/social/exchange": {
+      "post": {
+        "tags": [
+          "Account Authentication"
+        ],
+        "summary": "Troca codigo temporario de login social por sessao web",
+        "description": "Valida e consome atomicamente o codigo temporario emitido apos OAuth2 com Google ou GitHub, cria uma sessao proprietaria do Your Auth e define cookies HTTP-only de access token e refresh token. Tokens do provedor social nunca sao retornados.",
+        "operationId": "exchangeSocialLoginCode",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "Identificador do client/dispositivo usado para registrar a sessao e o refresh token.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Mozilla/5.0"
+          },
+          {
+            "name": "X-End-User-IP",
+            "in": "header",
+            "description": "IP real da conta autenticada.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "203.0.113.10"
+          },
+          {
+            "name": "X-Device-Name",
+            "in": "header",
+            "description": "Nome amigavel do dispositivo usado na sessao.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Chrome macOS"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginExchangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Codigo social trocado por sessao proprietaria. Os cookies access-token e refresh_token sao enviados no header Set-Cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Define os cookies HTTP-only access-token e refresh_token.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisicao invalido ou erro de validacao.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Codigo inexistente, expirado ou ja consumido. A mensagem de erro estavel e SOCIAL_CODE_INVALID.",
             "content": {
               "*/*": {
                 "schema": {
@@ -3788,7 +4094,13 @@
           "senderAccountId": {
             "type": "string"
           },
+          "senderAccountEmail": {
+            "type": "string"
+          },
           "recipientAccountId": {
+            "type": "string"
+          },
+          "recipientAccountEmail": {
             "type": "string"
           },
           "role": {
@@ -4368,6 +4680,18 @@
           "refreshToken"
         ]
       },
+      "SocialLoginExchangeRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
       "LoginDTO": {
         "type": "object",
         "properties": {
@@ -4394,10 +4718,16 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "lastName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email": {
             "type": "string"
@@ -4417,7 +4747,20 @@
             "$ref": "#/components/schemas/PhoneDTO"
           },
           "CPF": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "profileComplete": {
+            "type": "boolean"
           }
         }
       },
@@ -4428,13 +4771,26 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "lastName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email": {
             "type": "string"
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
           }
         }
       },
@@ -4469,8 +4825,7 @@
             "enum": [
               "FREE",
               "STARTER",
-              "PRO",
-              "BUSINESS"
+              "PRO"
             ]
           },
           "subscriptionStatus": {
@@ -4587,21 +4942,34 @@
       },
       "UpdatePlanLimitsDTO": {
         "type": "object",
+        "description": "Campos omitidos nao alteram o limite atual. Campos enviados como null deixam o limite ilimitado.",
         "properties": {
           "MAX_PROJECTS": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Limite maximo de projetos."
           },
           "MAX_USERS_TOTAL": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Limite maximo de usuarios totais."
           },
           "MAX_ACTIVE_SESSIONS_TOTAL": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Limite maximo de sessoes ativas totais."
           }
         }
       },
@@ -4616,8 +4984,7 @@
             "enum": [
               "FREE",
               "STARTER",
-              "PRO",
-              "BUSINESS"
+              "PRO"
             ]
           },
           "name": {

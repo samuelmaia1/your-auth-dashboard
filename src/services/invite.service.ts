@@ -113,9 +113,11 @@ export async function getAllPendingReceivedInvites() {
     ),
   )
 
-  return [firstPage, ...remainingPages]
+  const pendingInvites = [firstPage, ...remainingPages]
     .flatMap((page) => page.content ?? [])
     .filter((invite) => invite.status === 'PENDING')
+
+  return pendingInvites
 }
 
 export async function acceptReceivedInvite(inviteId: string) {

@@ -9,6 +9,7 @@ import {
   getAllPendingReceivedInvites,
   isInviteServiceError,
 } from '@/services/invite.service'
+import { useAuth } from '@/hooks/use-auth'
 import type { ProjectInviteResponse, ProjectInviteRole } from '@/types/invite-types'
 import { Button } from '@components/ui/button/button'
 import { Modal } from '@components/ui/modal'
@@ -60,15 +61,22 @@ function getInviteErrorMessage(error: unknown, fallbackMessage: string) {
 
 export function ReceivedInvitesInbox() {
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [invites, setInvites] = useState<ProjectInviteResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(isAuthenticated)
   const [acceptingInviteId, setAcceptingInviteId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const requestIdRef = useRef(0)
 
   const loadInvites = useCallback(async () => {
+    if (!isAuthenticated) {
+      setIsLoading(false)
+      return
+    }
+
     const requestId = requestIdRef.current + 1
+
     requestIdRef.current = requestId
     setIsLoading(true)
     setErrorMessage(null)
@@ -90,9 +98,14 @@ export function ReceivedInvitesInbox() {
         setIsLoading(false)
       }
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      requestIdRef.current += 1
+      return
+    }
+
     let shouldLoad = true
 
     queueMicrotask(() => {
@@ -105,7 +118,7 @@ export function ReceivedInvitesInbox() {
       shouldLoad = false
       requestIdRef.current += 1
     }
-  }, [loadInvites])
+  }, [isAuthenticated, loadInvites])
 
   async function handleAcceptInvite(invite: ProjectInviteResponse) {
     const inviteId = invite.id?.trim()
