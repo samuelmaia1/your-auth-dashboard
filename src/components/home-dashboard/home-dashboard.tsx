@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { getAccountSummary, isAccountSummaryServiceError } from '@/services/account.service'
 import { ReceivedInvitesInbox } from '@components/project-invites'
 import type {
+  AccountResponse,
   AccountProjectRole,
   AccountProjectSummaryResponse,
   AccountSummaryResponse,
@@ -49,6 +50,9 @@ import {
   ProjectTitle,
   RetryButton,
   SectionTitle,
+  AccountAvatar,
+  AccountAvatarImage,
+  HeaderIdentity,
 } from './style'
 
 type BadgeTone = 'success' | 'danger' | 'neutral' | 'info'
@@ -84,6 +88,31 @@ const badgeToneByStatus: Record<ProjectStatus, BadgeTone> = {
 
 function formatNumber(value?: number) {
   return numberFormatter.format(value ?? 0)
+}
+
+function getAccountDisplayName(account?: AccountResponse | null) {
+  const fullName = [account?.name, account?.lastName]
+    .map((namePart) => namePart?.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  return fullName || account?.email?.trim() || 'sua conta'
+}
+
+function getAccountInitials(displayName: string) {
+  const nameParts = displayName
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (nameParts.length === 0 || displayName === 'sua conta') {
+    return 'YA'
+  }
+
+  const firstInitial = nameParts[0]?.[0] ?? ''
+  const secondInitial = nameParts.length > 1 ? (nameParts[nameParts.length - 1]?.[0] ?? '') : ''
+
+  return `${firstInitial}${secondInitial}`.toUpperCase()
 }
 
 function getSummaryErrorMessage(error: unknown) {
@@ -199,15 +228,20 @@ function LoadingProjectCards() {
 }
 
 function Dashboard() {
-  const { account, isLoadingAccount, logout } = useAuth()
+  const { account, isAuthenticated, isLoadingAccount, logout } = useAuth()
   const [summary, setSummary] = useState<AccountSummaryResponse | null>(null)
-  const [isLoadingSummary, setIsLoadingSummary] = useState(true)
+  const [isLoadingSummary, setIsLoadingSummary] = useState(isAuthenticated)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null)
   const summaryRequestIdRef = useRef(0)
   const accountName = useMemo(
     () => [account?.name, account?.lastName].filter(Boolean).join(' '),
     [account?.lastName, account?.name],
+  )
+  const accountDisplayName = useMemo(() => getAccountDisplayName(account), [account])
+  const accountInitials = useMemo(
+    () => getAccountInitials(accountDisplayName),
+    [accountDisplayName],
   )
   const projects = summary?.projects ?? []
   const isSummaryUnavailable = !!summaryErrorMessage && !summary
@@ -230,6 +264,10 @@ function Dashboard() {
   ]
 
   const loadSummary = useCallback(async () => {
+    if (!isAuthenticated) {
+      return
+    }
+
     const requestId = summaryRequestIdRef.current + 1
 
     summaryRequestIdRef.current = requestId
@@ -243,7 +281,7 @@ function Dashboard() {
       setSummaryErrorMessage(errorMessage)
       setIsLoadingSummary(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOut) {
@@ -260,37 +298,53 @@ function Dashboard() {
   }, [isLoggingOut, logout])
 
   useEffect(() => {
-    const requestId = summaryRequestIdRef.current + 1
+    if (!isAuthenticated) {
+      summaryRequestIdRef.current += 1
+      return
+    }
 
-    summaryRequestIdRef.current = requestId
+    let shouldLoad = true
 
-    void fetchAccountSummary().then(({ data, errorMessage }) => {
-      if (summaryRequestIdRef.current === requestId) {
-        setSummary(data)
-        setSummaryErrorMessage(errorMessage)
-        setIsLoadingSummary(false)
+    queueMicrotask(() => {
+      if (shouldLoad) {
+        void loadSummary()
       }
     })
 
     return () => {
+      shouldLoad = false
       summaryRequestIdRef.current += 1
     }
-  }, [])
+  }, [isAuthenticated, loadSummary])
 
   return (
     <HomeRoot>
       <HomeHeader>
-        <HeaderContent>
-          <HeaderEyebrow>Início</HeaderEyebrow>
-          <HeaderTitle>Projetos de {account?.name}</HeaderTitle>
-          <HeaderSubtitle>
-            {isLoadingAccount
-              ? 'Carregando dados da conta...'
-              : accountName
-                ? `Visão geral dos projetos vinculados a ${accountName}.`
-                : 'Visão geral dos projetos vinculados à sua conta.'}
-          </HeaderSubtitle>
-        </HeaderContent>
+        <HeaderIdentity>
+          <AccountAvatar aria-label={`Identificação visual de ${accountDisplayName}`}>
+            {account?.avatarUrl ? (
+              <AccountAvatarImage
+                src={account.avatarUrl}
+                alt={`Avatar de ${accountDisplayName}`}
+                width={48}
+                height={48}
+              />
+            ) : (
+              <span aria-hidden="true">{accountInitials}</span>
+            )}
+          </AccountAvatar>
+          <HeaderContent>
+            <HeaderEyebrow>Início</HeaderEyebrow>
+            <HeaderTitle>Projetos de {accountDisplayName}</HeaderTitle>
+            <HeaderSubtitle>
+              {isLoadingAccount
+                ? 'Carregando dados da conta...'
+                : accountName
+                  ? `Visão geral dos projetos vinculados a ${accountName}.`
+                  : 'Visão geral dos projetos vinculados à sua conta.'}
+            </HeaderSubtitle>
+          </HeaderContent>
+        </HeaderIdentity>
         <HeaderActions>
           <ReceivedInvitesInbox />
           <LogoutButton

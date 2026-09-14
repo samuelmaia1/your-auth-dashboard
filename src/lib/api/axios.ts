@@ -1,11 +1,6 @@
-import axios, {
-  type AxiosError,
-  type AxiosRequestConfig,
-  type AxiosResponse,
-  type InternalAxiosRequestConfig,
-} from 'axios'
+import axios, { type AxiosError, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
-import { apiUrls, type BackendUrl } from '@lib/api/urls'
+import { apiBaseUrl, apiUrls, type BackendUrl } from '@lib/api/urls'
 
 type ApiRequestConfig<Data = unknown> = Omit<AxiosRequestConfig<Data>, 'data' | 'method' | 'url'>
 
@@ -13,25 +8,12 @@ type ApiRequestWithUrl<Data = unknown> = AxiosRequestConfig<Data> & {
   url: BackendUrl
 }
 
-interface RetriableRequestConfig<Data = unknown> extends InternalAxiosRequestConfig<Data> {
+interface RetriableRequestConfig<Data = unknown> extends AxiosRequestConfig<Data> {
   _retry?: boolean
 }
 
-const normalizeBaseUrl = (baseUrl?: string) => {
-  const trimmedBaseUrl = baseUrl?.trim()
-
-  if (!trimmedBaseUrl) {
-    return undefined
-  }
-
-  if (/^https?:\/\//i.test(trimmedBaseUrl)) {
-    return trimmedBaseUrl
-  }
-
-  return `http://${trimmedBaseUrl}`
-}
-
-const baseURL = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL)
+const baseURL = apiBaseUrl || undefined
+const authSessionRejectionListeners = new Set<() => void>()
 
 export const axiosClient = axios.create({
   baseURL,
@@ -51,40 +33,86 @@ const refreshClient = axios.create({
 
 let refreshRequest: Promise<AxiosResponse<unknown>> | null = null
 
+function notifyAuthSessionRejection() {
+  authSessionRejectionListeners.forEach((listener) => listener())
+}
+
 const refreshSession = () => {
-  refreshRequest ??= refreshClient.post(apiUrls.auth.refresh).finally(() => {
-    refreshRequest = null
-  })
+  if (refreshRequest) {
+    return refreshRequest
+  }
+
+  refreshRequest ??= refreshClient
+    .post(apiUrls.auth.refresh)
+    .catch((error: unknown) => {
+      notifyAuthSessionRejection()
+      throw error
+    })
+    .finally(() => {
+      refreshRequest = null
+    })
 
   return refreshRequest
 }
 
 const nonRefreshableUrls = [
+  apiUrls.accounts.create,
   apiUrls.auth.login,
   apiUrls.auth.logout,
   apiUrls.auth.refresh,
+  apiUrls.auth.socialExchange,
   apiUrls.auth.mobileLogin,
   apiUrls.auth.mobileRefresh,
   apiUrls.users.login,
   apiUrls.users.logout,
   apiUrls.users.refresh,
+  apiUrls.plans.list,
 ]
 
-const isNonRefreshableRequest = (url?: string) =>
-  url ? nonRefreshableUrls.some((nonRefreshableUrl) => url.includes(nonRefreshableUrl)) : false
-const shouldRefreshSession = (status?: number) => status === 401 || status === 403
+function getRequestPath(url?: string) {
+  if (!url) {
+    return null
+  }
+
+  try {
+    return new URL(url, 'http://your-auth.local').pathname
+  } catch {
+    return url.split('?')[0] ?? url
+  }
+}
+
+const isNonRefreshableRequest = (url?: string) => {
+  const requestPath = getRequestPath(url)
+
+  return requestPath
+    ? nonRefreshableUrls.some((nonRefreshableUrl) => requestPath === nonRefreshableUrl)
+    : false
+}
+const shouldRefreshSession = (status?: number) => status === 401
+
+export function subscribeToAuthSessionRejection(listener: () => void) {
+  authSessionRejectionListeners.add(listener)
+
+  return () => {
+    authSessionRejectionListeners.delete(listener)
+  }
+}
 
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as RetriableRequestConfig | undefined
 
-    if (
-      !shouldRefreshSession(error.response?.status) ||
-      !originalRequest ||
-      originalRequest._retry ||
-      isNonRefreshableRequest(originalRequest.url)
-    ) {
+    if (!shouldRefreshSession(error.response?.status) || !originalRequest) {
+      return Promise.reject(error)
+    }
+
+    if (isNonRefreshableRequest(originalRequest.url)) {
+      return Promise.reject(error)
+    }
+
+    if (originalRequest._retry) {
+      notifyAuthSessionRejection()
       return Promise.reject(error)
     }
 

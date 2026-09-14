@@ -17,9 +17,11 @@ import {
   logoutAccountSession,
   validateAccountSession,
 } from '@/services/auth-account.service'
+import { subscribeToAuthSessionRejection } from '@lib/api/axios'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 
-type AuthSessionStatus = 'checking' | 'authenticated' | 'unauthenticated'
+type AuthSessionStatus =
+  'initializing' | 'exchanging-social-code' | 'authenticated' | 'unauthenticated'
 
 export type AuthContextValue = {
   account: AccountResponse | null
@@ -29,6 +31,9 @@ export type AuthContextValue = {
   isCheckingSession: boolean
   status: AuthSessionStatus
   login: (data: LoginAccountRequest) => Promise<AccountResponse>
+  beginSocialLoginExchange: () => void
+  completeSocialLogin: (account: AccountResponse) => Promise<void>
+  failSocialLoginExchange: () => void
   logout: () => Promise<void>
   validateSession: () => Promise<boolean>
   fetchAccountData: () => Promise<AccountResponse | null>
@@ -39,8 +44,10 @@ type AuthProviderProps = {
 }
 
 const privateEntryPath = '/home'
-const privatePaths = [privateEntryPath, '/projetos']
-const publicPaths = new Set(['/', '/login', '/cadastro'])
+const socialCallbackPath = '/auth/callback'
+const privatePaths = [privateEntryPath, '/projetos', '/assinatura', '/planos']
+const publicPaths = new Set(['/', '/login', '/cadastro', '/auth/callback'])
+let sessionValidationRequest: Promise<AccountResponse> | null = null
 
 const isPrivatePath = (pathname: string) =>
   privatePaths.some(
@@ -48,6 +55,21 @@ const isPrivatePath = (pathname: string) =>
   )
 
 const isPublicPath = (pathname: string) => publicPaths.has(pathname)
+const isSocialCallbackPath = (pathname: string) => pathname === socialCallbackPath
+const isSessionValidationSuccessStillRelevant = (status: AuthSessionStatus) =>
+  status === 'initializing' || status === 'authenticated'
+
+function getSessionValidationRequest() {
+  if (sessionValidationRequest) {
+    return sessionValidationRequest
+  }
+
+  sessionValidationRequest = validateAccountSession().finally(() => {
+    sessionValidationRequest = null
+  })
+
+  return sessionValidationRequest
+}
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -56,36 +78,93 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname()
   const [authenticatedAccount, setAuthenticatedAccount] = useState<AccountResponse | null>(null)
   const [isLoadingAccount, setIsLoadingAccount] = useState(false)
-  const [status, setStatus] = useState<AuthSessionStatus>('checking')
+  const [status, setStatus] = useState<AuthSessionStatus>('initializing')
   const authenticatedAccountRef = useRef<AccountResponse | null>(authenticatedAccount)
+  const statusRef = useRef<AuthSessionStatus>('initializing')
+  const pathnameRef = useRef(pathname)
   const validationRequestIdRef = useRef(0)
 
   useEffect(() => {
     authenticatedAccountRef.current = authenticatedAccount
   }, [authenticatedAccount])
 
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
+
+  useEffect(() => {
+    pathnameRef.current = pathname
+  }, [pathname])
+
+  const clearAuthenticatedSession = useCallback(
+    ({ redirectToPublicEntry = false } = {}) => {
+      const isAlreadyUnauthenticated =
+        statusRef.current === 'unauthenticated' && !authenticatedAccountRef.current
+
+      if (!isAlreadyUnauthenticated) {
+        validationRequestIdRef.current += 1
+        authenticatedAccountRef.current = null
+        statusRef.current = 'unauthenticated'
+        setAuthenticatedAccount(null)
+        setIsLoadingAccount(false)
+        setStatus('unauthenticated')
+      }
+
+      if (redirectToPublicEntry && pathnameRef.current !== '/') {
+        router.replace('/')
+      }
+    },
+    [router],
+  )
+
+  const setAuthenticatedSession = useCallback(
+    (account: AccountResponse) => {
+      validationRequestIdRef.current += 1
+      authenticatedAccountRef.current = account
+      statusRef.current = 'authenticated'
+      setAuthenticatedAccount(account)
+      setIsLoadingAccount(false)
+      setStatus('authenticated')
+      router.replace(privateEntryPath)
+    },
+    [router],
+  )
+
+  const beginSocialLoginExchange = useCallback(() => {
+    validationRequestIdRef.current += 1
+    setIsLoadingAccount(false)
+    statusRef.current = 'exchanging-social-code'
+    setStatus('exchanging-social-code')
+  }, [])
+
+  const failSocialLoginExchange = useCallback(() => {
+    clearAuthenticatedSession()
+  }, [clearAuthenticatedSession])
+
   const validateSession = useCallback(async () => {
     const validationRequestId = validationRequestIdRef.current + 1
 
     validationRequestIdRef.current = validationRequestId
-    setStatus('checking')
+    statusRef.current = 'initializing'
+    setStatus('initializing')
     setIsLoadingAccount(true)
 
     try {
-      const account = await validateAccountSession()
+      const account = await getSessionValidationRequest()
 
       if (validationRequestIdRef.current === validationRequestId) {
         authenticatedAccountRef.current = account
+        statusRef.current = 'authenticated'
         setAuthenticatedAccount(account)
         setStatus('authenticated')
       }
 
-      return true
+      const isStillRelevant = isSessionValidationSuccessStillRelevant(statusRef.current)
+
+      return isStillRelevant
     } catch {
       if (validationRequestIdRef.current === validationRequestId) {
-        authenticatedAccountRef.current = null
-        setAuthenticatedAccount(null)
-        setStatus('unauthenticated')
+        clearAuthenticatedSession()
       }
 
       return false
@@ -94,22 +173,53 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoadingAccount(false)
       }
     }
-  }, [])
+  }, [clearAuthenticatedSession])
 
   const login = useCallback(
     async (data: LoginAccountRequest) => {
       const account = await loginAccount(data)
 
-      validationRequestIdRef.current += 1
-      authenticatedAccountRef.current = account
-      setAuthenticatedAccount(account)
-      setIsLoadingAccount(false)
-      setStatus('authenticated')
-      router.replace(privateEntryPath)
+      setAuthenticatedSession(account)
 
       return account
     },
-    [router],
+    [setAuthenticatedSession],
+  )
+
+  const completeSocialLogin = useCallback(
+    async (account: AccountResponse) => {
+      const validationRequestId = validationRequestIdRef.current + 1
+
+      validationRequestIdRef.current = validationRequestId
+      authenticatedAccountRef.current = account
+      setAuthenticatedAccount(account)
+      setIsLoadingAccount(true)
+      statusRef.current = 'exchanging-social-code'
+      setStatus('exchanging-social-code')
+
+      try {
+        const validatedAccount = await getSessionValidationRequest()
+
+        if (validationRequestIdRef.current === validationRequestId) {
+          authenticatedAccountRef.current = validatedAccount
+          statusRef.current = 'authenticated'
+          setAuthenticatedAccount(validatedAccount)
+          setStatus('authenticated')
+          router.replace(privateEntryPath)
+        }
+      } catch (error: unknown) {
+        if (validationRequestIdRef.current === validationRequestId) {
+          clearAuthenticatedSession()
+        }
+
+        throw error
+      } finally {
+        if (validationRequestIdRef.current === validationRequestId) {
+          setIsLoadingAccount(false)
+        }
+      }
+    },
+    [clearAuthenticatedSession, router],
   )
 
   const logout = useCallback(async () => {
@@ -118,15 +228,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await logoutAccountSession()
 
-      validationRequestIdRef.current += 1
-      authenticatedAccountRef.current = null
-      setAuthenticatedAccount(null)
-      setStatus('unauthenticated')
-      router.replace('/')
+      clearAuthenticatedSession({ redirectToPublicEntry: true })
     } finally {
       setIsLoadingAccount(false)
     }
-  }, [router])
+  }, [clearAuthenticatedSession])
 
   const fetchAccountData = useCallback(async () => {
     if (authenticatedAccountRef.current) {
@@ -142,10 +248,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return authenticatedAccountRef.current
   }, [validateSession])
 
+  useEffect(
+    () =>
+      subscribeToAuthSessionRejection(() => {
+        clearAuthenticatedSession({
+          redirectToPublicEntry: isPrivatePath(pathnameRef.current),
+        })
+      }),
+    [clearAuthenticatedSession],
+  )
+
   useEffect(() => {
     let isCurrentRouteCheck = true
 
     async function syncSessionWithRoute() {
+      if (isSocialCallbackPath(pathname)) {
+        beginSocialLoginExchange()
+        return
+      }
+
+      if (authenticatedAccountRef.current) {
+        if (isPublicPath(pathname)) {
+          router.replace(privateEntryPath)
+        }
+
+        return
+      }
+
       const hasValidSession = await validateSession()
 
       if (!isCurrentRouteCheck) {
@@ -167,7 +296,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       isCurrentRouteCheck = false
     }
-  }, [pathname, router, validateSession])
+  }, [beginSocialLoginExchange, pathname, router, validateSession])
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -175,27 +304,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
       authenticatedAccount,
       isAuthenticated: status === 'authenticated',
       isLoadingAccount,
-      isCheckingSession: status === 'checking',
+      isCheckingSession: status === 'initializing' || status === 'exchanging-social-code',
       status,
       login,
+      beginSocialLoginExchange,
+      completeSocialLogin,
+      failSocialLoginExchange,
       logout,
       validateSession,
       fetchAccountData,
     }),
     [
       authenticatedAccount,
+      beginSocialLoginExchange,
       fetchAccountData,
+      failSocialLoginExchange,
       isLoadingAccount,
+      completeSocialLogin,
       login,
       logout,
       status,
       validateSession,
     ],
   )
+  const isCurrentSocialCallbackPath = isSocialCallbackPath(pathname)
+  const isWaitingForSession = status === 'initializing' || status === 'exchanging-social-code'
   const shouldShowSessionLoading =
-    status === 'checking' ||
-    (status === 'authenticated' && isPublicPath(pathname)) ||
-    (status === 'unauthenticated' && isPrivatePath(pathname))
+    !isCurrentSocialCallbackPath &&
+    (isWaitingForSession ||
+      (status === 'authenticated' && isPublicPath(pathname)) ||
+      (status === 'unauthenticated' && isPrivatePath(pathname)))
 
   return (
     <AuthContext.Provider value={value}>

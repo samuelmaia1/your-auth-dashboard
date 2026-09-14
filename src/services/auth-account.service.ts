@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import { api } from '@lib/api/axios'
-import { apiUrls } from '@lib/api/urls'
+import { apiUrls, buildBackendUrl, type SocialProvider } from '@lib/api/urls'
 import type { AccountResponse, LoginAccountRequest } from '@/types/account-types'
 import type { ApiErrorResponse } from '@/types/api-response-types'
 
@@ -9,11 +9,25 @@ const defaultAuthAccountErrorMessage =
   'Não foi possível autenticar a conta. Revise os dados e tente novamente.'
 const defaultLogoutAccountErrorMessage =
   'Não foi possível encerrar sua sessão. Tente novamente em alguns instantes.'
+const defaultSocialLoginErrorMessage = 'Não foi possível concluir o login social.'
 
 type AuthAccountErrorMessageConfig = {
   defaultMessage: string
   messagesByStatus: Record<number, string>
 }
+
+type SocialLoginExchangeRequest = {
+  code: string
+}
+
+export type SocialLoginErrorCode =
+  | 'SOCIAL_LOGIN_DENIED'
+  | 'SOCIAL_PROVIDER_ERROR'
+  | 'SOCIAL_EMAIL_UNAVAILABLE'
+  | 'SOCIAL_EMAIL_NOT_VERIFIED'
+  | 'SOCIAL_ACCOUNT_DISABLED'
+  | 'SOCIAL_LOGIN_FAILED'
+  | 'SOCIAL_CODE_INVALID'
 
 const authAccountErrorMessagesByStatus: Record<number, string> = {
   400: 'Não foi possível validar os dados de login. Revise os campos e tente novamente.',
@@ -27,6 +41,17 @@ const logoutAccountErrorMessagesByStatus: Record<number, string> = {
   500: 'Não foi possível encerrar sua sessão agora. Tente novamente em alguns instantes.',
 }
 
+const socialLoginErrorMessagesByCode: Record<SocialLoginErrorCode, string> = {
+  SOCIAL_LOGIN_DENIED: 'Você cancelou a autorização do login social.',
+  SOCIAL_PROVIDER_ERROR: 'Não foi possível concluir a autenticação com o provedor.',
+  SOCIAL_EMAIL_UNAVAILABLE: 'Não foi possível obter um e-mail válido da sua conta.',
+  SOCIAL_EMAIL_NOT_VERIFIED: 'Seu e-mail no provedor ainda não foi verificado.',
+  SOCIAL_ACCOUNT_DISABLED: 'Esta conta está desativada.',
+  SOCIAL_LOGIN_FAILED: defaultSocialLoginErrorMessage,
+  SOCIAL_CODE_INVALID:
+    'O link de autenticação expirou ou já foi utilizado. Inicie o login novamente.',
+}
+
 const authAccountErrorMessageConfig: AuthAccountErrorMessageConfig = {
   defaultMessage: defaultAuthAccountErrorMessage,
   messagesByStatus: authAccountErrorMessagesByStatus,
@@ -35,6 +60,15 @@ const authAccountErrorMessageConfig: AuthAccountErrorMessageConfig = {
 const logoutAccountErrorMessageConfig: AuthAccountErrorMessageConfig = {
   defaultMessage: defaultLogoutAccountErrorMessage,
   messagesByStatus: logoutAccountErrorMessagesByStatus,
+}
+
+const socialLoginExchangeErrorMessageConfig: AuthAccountErrorMessageConfig = {
+  defaultMessage: defaultSocialLoginErrorMessage,
+  messagesByStatus: {
+    400: 'Não foi possível validar o retorno do login social. Inicie o login novamente.',
+    401: socialLoginErrorMessagesByCode.SOCIAL_CODE_INVALID,
+    500: 'Não foi possível iniciar sua sessão social agora. Tente novamente em alguns instantes.',
+  },
 }
 
 function getDefaultAuthAccountErrorMessage(
@@ -66,6 +100,21 @@ export class AuthAccountServiceError extends Error {
 
 export function isAuthAccountServiceError(error: unknown): error is AuthAccountServiceError {
   return error instanceof AuthAccountServiceError
+}
+
+function isSocialLoginErrorCode(value: unknown): value is SocialLoginErrorCode {
+  return (
+    typeof value === 'string' &&
+    Object.prototype.hasOwnProperty.call(socialLoginErrorMessagesByCode, value)
+  )
+}
+
+export function getSocialLoginErrorMessage(code?: string | null) {
+  if (isSocialLoginErrorCode(code)) {
+    return socialLoginErrorMessagesByCode[code]
+  }
+
+  return defaultSocialLoginErrorMessage
 }
 
 function isApiErrorResponse(data: unknown): data is ApiErrorResponse {
@@ -113,13 +162,49 @@ export function normalizeAuthAccountError(
   }
 }
 
+function normalizeSocialLoginExchangeError(error: unknown) {
+  const normalizedError = normalizeAuthAccountError(error, socialLoginExchangeErrorMessageConfig)
+  const knownErrorCode = [normalizedError.error, normalizedError.message].find(
+    isSocialLoginErrorCode,
+  )
+
+  if (!knownErrorCode) {
+    return normalizedError
+  }
+
+  return {
+    ...normalizedError,
+    message: getSocialLoginErrorMessage(knownErrorCode),
+  }
+}
+
+export function getSocialLoginUrl(provider: SocialProvider) {
+  return buildBackendUrl(apiUrls.auth.socialAuthorization(provider))
+}
+
+export function startSocialLogin(provider: SocialProvider) {
+  const redirectUrl = getSocialLoginUrl(provider)
+
+  window.location.assign(redirectUrl)
+}
+
 export async function loginAccount(data: LoginAccountRequest) {
   try {
-    const response = await api.post<AccountResponse, LoginAccountRequest>(apiUrls.auth.login, data)
-
-    return response
+    return await api.post<AccountResponse, LoginAccountRequest>(apiUrls.auth.login, data)
   } catch (error: unknown) {
     throw new AuthAccountServiceError(normalizeAuthAccountError(error))
+  }
+}
+
+export async function exchangeSocialLoginCode(code: string) {
+  try {
+    return await api.post<AccountResponse, SocialLoginExchangeRequest>(
+      apiUrls.auth.socialExchange,
+      { code },
+      { withCredentials: true },
+    )
+  } catch (error: unknown) {
+    throw new AuthAccountServiceError(normalizeSocialLoginExchangeError(error))
   }
 }
 

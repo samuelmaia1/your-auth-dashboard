@@ -30,21 +30,24 @@ export interface LoginAccountRequest {
 
 export interface AccountResponse {
   id?: string
-  name?: string
-  lastName?: string
+  name?: string | null
+  lastName?: string | null
   email?: string
   createdAt?: string
   updatedAt?: string
-  address?: AddressDTO
-  phone?: PhoneDTO
-  CPF?: string
+  address?: AddressDTO | null
+  phone?: PhoneDTO | null
+  CPF?: string | null
+  avatarUrl?: string | null
+  profileComplete?: boolean
 }
 
 export interface AccountBasicResponse {
   id?: string
-  name?: string
-  lastName?: string
+  name?: string | null
+  lastName?: string | null
   email?: string
+  avatarUrl?: string | null
 }
 
 export type ProjectStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
