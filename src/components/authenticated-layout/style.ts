@@ -1,6 +1,7 @@
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
+import Image from 'next/image'
 import NextLink from 'next/link'
 
 const drawerWidth = 280
@@ -121,6 +122,12 @@ export const DrawerSection = styled('div')({
   gap: 4,
 })
 
+export const NavGroup = styled('div')({
+  minWidth: 0,
+  display: 'grid',
+  gap: 4,
+})
+
 export const NavItem = styled(NextLink, {
   shouldForwardProp: (prop) => prop !== '$active',
 })<{ $active: boolean }>(({ $active, theme }) => {
@@ -153,6 +160,42 @@ export const NavItem = styled(NextLink, {
   }
 })
 
+export const NavGroupButton = styled('button', {
+  shouldForwardProp: (prop) => prop !== '$active',
+})<{ $active: boolean }>(({ $active, theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: '100%',
+    minHeight: 42,
+    padding: '0 10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    border: 0,
+    borderRadius: 8,
+    backgroundColor: $active ? theme.alpha(palette.accent.main, 0.14) : 'transparent',
+    color: $active ? palette.text.primary : palette.text.secondary,
+    boxShadow: $active ? `inset 0 0 0 1px ${theme.alpha(palette.accent.main, 0.28)}` : 'none',
+    cursor: 'pointer',
+    fontSize: 14,
+    fontWeight: $active ? 600 : 500,
+    lineHeight: '20px',
+    textAlign: 'left',
+    transition: 'background-color 150ms ease, box-shadow 150ms ease, color 150ms ease',
+
+    '&:hover': {
+      backgroundColor: $active ? theme.alpha(palette.accent.main, 0.18) : palette.muted.main,
+      color: palette.text.primary,
+    },
+
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}`,
+    },
+  }
+})
+
 export const NavItemIcon = styled('span', {
   shouldForwardProp: (prop) => prop !== '$active',
 })<{ $active: boolean }>(({ $active, theme }) => {
@@ -170,6 +213,85 @@ export const NavItemIcon = styled('span', {
     color: $active ? palette.success.main : 'inherit',
     transition: 'background-color 150ms ease, color 150ms ease',
   }
+})
+
+export const NavItemLabel = styled('span')({
+  minWidth: 0,
+  flex: 1,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+export const NavChevron = styled('span', {
+  shouldForwardProp: (prop) => prop !== '$open',
+})<{ $open: boolean }>(({ $open }) => ({
+  width: 18,
+  height: 18,
+  display: 'inline-flex',
+  flexShrink: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+  transform: $open ? 'rotate(180deg)' : 'rotate(0deg)',
+  transition: 'transform 150ms ease',
+}))
+
+export const NavSubmenu = styled('div', {
+  shouldForwardProp: (prop) => prop !== '$open',
+})<{ $open: boolean }>(({ $open }) => ({
+  maxHeight: $open ? 340 : 0,
+  marginLeft: 38,
+  overflow: 'hidden',
+  display: 'grid',
+  gap: 3,
+  transition: 'max-height 180ms ease',
+}))
+
+export const NavSubItem = styled(NextLink, {
+  shouldForwardProp: (prop) => prop !== '$active',
+})<{ $active: boolean }>(({ $active, theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    minHeight: 34,
+    padding: '0 10px',
+    display: 'flex',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: $active ? theme.alpha(palette.accent.main, 0.12) : 'transparent',
+    color: $active ? palette.text.primary : palette.text.secondary,
+    fontSize: 13,
+    fontWeight: $active ? 700 : 500,
+    lineHeight: '18px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    transition: 'background-color 150ms ease, color 150ms ease',
+
+    '&:hover': {
+      backgroundColor: palette.muted.main,
+      color: palette.text.primary,
+    },
+
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: `0 0 0 3px ${theme.alpha(palette.ring, 0.32)}`,
+    },
+  }
+})
+
+export const DocsOnlyTitle = styled('p')(({ theme }) => ({
+  padding: '0 10px 6px',
+  color: (theme.vars || theme).palette.text.secondary,
+  fontSize: 12,
+  fontWeight: 800,
+  lineHeight: '16px',
+  textTransform: 'uppercase',
+}))
+
+export const DocsOnlyList = styled('div')({
+  display: 'grid',
+  gap: 3,
 })
 
 export const MobileMenuButton = styled(IconButton)(({ theme }) => {
@@ -230,3 +352,41 @@ export const AuthenticatedContent = styled('div')(({ theme }) => ({
     padding: '40px 48px',
   },
 }))
+
+export const ContentTopBar = styled('header')(({ theme }) => ({
+  width: '100%',
+  maxWidth: 1120,
+  margin: '0 auto 20px',
+  display: 'flex',
+  justifyContent: 'flex-end',
+
+  [theme.breakpoints.down('md')]: {
+    marginTop: -48,
+  },
+}))
+
+export const AuthenticatedAccountAvatar = styled('span')(({ theme }) => {
+  const palette = (theme.vars || theme).palette
+
+  return {
+    width: 40,
+    height: 40,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    border: `1px solid ${palette.divider}`,
+    borderRadius: 8,
+    backgroundColor: palette.primary.main,
+    color: palette.primary.contrastText,
+    fontSize: 13,
+    fontWeight: 800,
+    lineHeight: '18px',
+  }
+})
+
+export const AuthenticatedAccountAvatarImage = styled(Image)({
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+})

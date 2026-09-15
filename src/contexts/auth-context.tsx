@@ -47,6 +47,7 @@ const privateEntryPath = '/home'
 const socialCallbackPath = '/auth/callback'
 const privatePaths = [privateEntryPath, '/projetos', '/assinatura', '/planos']
 const publicPaths = new Set(['/', '/login', '/cadastro', '/auth/callback'])
+const sharedPaths = ['/docs']
 let sessionValidationRequest: Promise<AccountResponse> | null = null
 
 const isPrivatePath = (pathname: string) =>
@@ -55,6 +56,8 @@ const isPrivatePath = (pathname: string) =>
   )
 
 const isPublicPath = (pathname: string) => publicPaths.has(pathname)
+const isSharedPath = (pathname: string) =>
+  sharedPaths.some((sharedPath) => pathname === sharedPath || pathname.startsWith(`${sharedPath}/`))
 const isSocialCallbackPath = (pathname: string) => pathname === socialCallbackPath
 const isSessionValidationSuccessStillRelevant = (status: AuthSessionStatus) =>
   status === 'initializing' || status === 'authenticated'
@@ -328,9 +331,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ],
   )
   const isCurrentSocialCallbackPath = isSocialCallbackPath(pathname)
+  const isCurrentSharedPath = isSharedPath(pathname)
   const isWaitingForSession = status === 'initializing' || status === 'exchanging-social-code'
   const shouldShowSessionLoading =
     !isCurrentSocialCallbackPath &&
+    !isCurrentSharedPath &&
     (isWaitingForSession ||
       (status === 'authenticated' && isPublicPath(pathname)) ||
       (status === 'unauthenticated' && isPrivatePath(pathname)))
